@@ -6,7 +6,8 @@ import { Download, Printer, Search } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { createClient } from "@/lib/supabase/client";
 import { useLanguage } from "@/lib/i18n";
-import html2canvas from 'html2canvas';
+import { toPng } from 'html-to-image';
+import download from 'downloadjs';
 import { jsPDF } from 'jspdf';
 import { toast } from "sonner";
 
@@ -91,17 +92,15 @@ export default function InvoicesPage() {
     const el = receiptRef.current;
     
     try {
-      const canvas = await html2canvas(el, { scale: 3, useCORS: true, backgroundColor: '#ffffff' });
-      const imgData = canvas.toDataURL('image/png');
-      const link = document.createElement('a');
-      link.download = `receipt-${selectedSale.id.slice(0,8)}.png`;
-      link.href = imgData;
-      link.click();
+      const imgData = await toPng(el, { quality: 1, pixelRatio: 3, backgroundColor: '#ffffff' });
+      download(imgData, `receipt-${selectedSale.id.slice(0,8)}.png`, 'image/png');
+      
       toast.dismiss();
       toast.success(lang === 'en' ? 'Downloaded!' : 'Waa la soo dejiyay!');
     } catch(err) {
       toast.dismiss();
-      toast.error('Galdaloolo ayaa dhacday.');
+      console.error(err);
+      toast.error('Galdaloolo ayaa dhacday (' + (err as Error)?.message + ')');
     }
   };
 
@@ -120,9 +119,12 @@ export default function InvoicesPage() {
     el.style.zIndex = '-9999';
 
     try {
-      const canvas = await html2canvas(el, { scale: 2, useCORS: true, backgroundColor: '#ffffff' });
-      const imgData = canvas.toDataURL('image/png');
+      const imgData = await toPng(el, { quality: 1, pixelRatio: 2, backgroundColor: '#ffffff' });
       
+      const tempImg = new Image();
+      tempImg.src = imgData;
+      await new Promise(resolve => tempImg.onload = resolve);
+
       const pdf = new jsPDF({
          orientation: 'portrait',
          unit: 'mm',
@@ -130,7 +132,7 @@ export default function InvoicesPage() {
       });
 
       const pdfWidth = pdf.internal.pageSize.getWidth();
-      const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
+      const pdfHeight = (tempImg.height * pdfWidth) / tempImg.width;
 
       pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
       pdf.save(`invoice-${selectedSale.id.slice(0,8)}.pdf`);
@@ -138,8 +140,9 @@ export default function InvoicesPage() {
       toast.dismiss();
       toast.success(lang === 'en' ? 'PDF Downloaded!' : 'PDF waa la kaydiyay!');
     } catch(err) {
+      console.error(err);
       toast.dismiss();
-      toast.error('Galdaloolo ayaa dhacday dhanka PDF-ta.');
+      toast.error('Galdaloolo ayaa dhacday (' + (err as Error)?.message + ')');
     } finally {
       // Restore
       el.style.left = oldLeft;

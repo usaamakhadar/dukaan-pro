@@ -19,7 +19,8 @@ import { toast } from "sonner";
 import { useLanguage } from "@/lib/i18n";
 import { createClient } from "@/lib/supabase/client";
 import BarcodeScannerCamera from "@/components/BarcodeScannerCamera";
-import html2canvas from 'html2canvas';
+import { toPng } from 'html-to-image';
+import download from 'downloadjs';
 import { jsPDF } from 'jspdf';
 
 export default function POSPage() {
@@ -336,23 +337,25 @@ export default function POSPage() {
      if (!element) return;
      
      toast.loading(lang === 'en' ? "Generating file..." : "Waa la diyaarinayaa...");
+     
      try {
-         const canvas = await html2canvas(element, { scale: 3, useCORS: true, backgroundColor: '#ffffff' });
-         const imgData = canvas.toDataURL('image/png');
+         // Fallback to basic print if iOS severely limits it (we keep it pure HTML to Image)
+         const imgData = await toPng(element, { quality: 1, pixelRatio: 3, backgroundColor: '#ffffff' });
          const fileName = `receipt-${lastSaleData.id.slice(0,8)}.pdf`;
 
          if (type === 'image') {
-            const link = document.createElement('a');
-            link.download = fileName.replace('.pdf', '.png');
-            link.href = imgData;
-            link.click();
+            download(imgData, fileName.replace('.pdf', '.png'), 'image/png');
          } else {
+            const tempImg = new Image();
+            tempImg.src = imgData;
+            await new Promise(resolve => tempImg.onload = resolve);
+            
             const pdf = new jsPDF({
                orientation: 'portrait',
                unit: 'mm',
-               format: [80, (canvas.height * 80) / canvas.width]
+               format: [80, (tempImg.height * 80) / tempImg.width]
             });
-            pdf.addImage(imgData, 'PNG', 0, 0, 80, (canvas.height * 80) / canvas.width);
+            pdf.addImage(imgData, 'PNG', 0, 0, 80, (tempImg.height * 80) / tempImg.width);
             pdf.save(fileName);
          }
          
@@ -360,7 +363,8 @@ export default function POSPage() {
          toast.success(lang === 'en' ? "Downloaded!" : "Waa la soo dejiyay!");
      } catch(err) {
          toast.dismiss();
-         toast.error("Failed to generate receipt.");
+         console.error(err);
+         toast.error("Galdaloolo ayaa dhacday (" + (err as Error)?.message + ")");
      }
   };
 
@@ -615,12 +619,14 @@ export default function POSPage() {
       `}>
         
         {/* Mobile Close Button for Cart */}
-        <button 
-           onClick={() => setIsCartOpenMobile(false)}
-           className="lg:hidden absolute -left-12 top-6 bg-white p-3 rounded-l-2xl shadow-xl border-l border-y border-zinc-100 text-zinc-500"
-        >
-           <X className="h-6 w-6" />
-        </button>
+        {isCartOpenMobile && (
+          <button 
+             onClick={() => setIsCartOpenMobile(false)}
+             className="lg:hidden absolute -left-12 top-6 bg-white p-3 rounded-l-2xl shadow-xl border-l border-y border-zinc-100 text-zinc-500"
+          >
+             <X className="h-6 w-6" />
+          </button>
+        )}
         
         {/* Cart Header */}
         <div className="p-6 pb-4 border-b border-zinc-100">
