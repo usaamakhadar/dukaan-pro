@@ -92,7 +92,18 @@ export default function InvoicesPage() {
     const el = receiptRef.current;
     
     try {
-      const imgData = await toPng(el, { quality: 1, pixelRatio: 3, backgroundColor: '#ffffff' });
+      const imgData = await toPng(el, { 
+         quality: 1, 
+         pixelRatio: 3, 
+         backgroundColor: '#ffffff',
+         style: {
+            width: '380px',
+            height: 'auto',
+            transform: 'none',
+            margin: '0',
+            position: 'relative'
+         }
+      });
       download(imgData, `receipt-${selectedSale.id.slice(0,8)}.png`, 'image/png');
       
       toast.dismiss();
@@ -119,7 +130,17 @@ export default function InvoicesPage() {
     el.style.zIndex = '-9999';
 
     try {
-      const imgData = await toPng(el, { quality: 1, pixelRatio: 2, backgroundColor: '#ffffff' });
+      const imgData = await toPng(el, { 
+         quality: 1, 
+         pixelRatio: 2, 
+         backgroundColor: '#ffffff',
+         style: {
+            width: '794px',  // standard A4 pixel width roughly
+            height: 'auto',
+            transform: 'none',
+            position: 'relative'
+         }
+      });
       
       const tempImg = new window.Image();
       tempImg.src = imgData;

@@ -339,8 +339,19 @@ export default function POSPage() {
      toast.loading(lang === 'en' ? "Generating file..." : "Waa la diyaarinayaa...");
      
      try {
-         // Fallback to basic print if iOS severely limits it (we keep it pure HTML to Image)
-         const imgData = await toPng(element, { quality: 1, pixelRatio: 3, backgroundColor: '#ffffff' });
+         // Force explicit dimensions for the cloned node so Safari doesn't clip overflowing edges on narrow screens
+         const imgData = await toPng(element, { 
+            quality: 1, 
+            pixelRatio: 3, 
+            backgroundColor: '#ffffff',
+            style: {
+               width: '380px',
+               height: 'auto',
+               transform: 'none',
+               margin: '0',
+               position: 'relative'
+            }
+         });
          const fileName = `receipt-${lastSaleData.id.slice(0,8)}.pdf`;
 
          if (type === 'image') {
