@@ -29,41 +29,44 @@ export default function BarcodeScannerCamera({ onScan, onClose, title = "Scan Ba
       verbose: false
     });
 
-    Html5Qrcode.getCameras().then(devices => {
-      if (devices && devices.length > 0) {
-        html5QrCode.start(
-          { facingMode: "environment" },
-          {
-            fps: 20,    
-            qrbox: { width: 300, height: 150 },
-            videoConstraints: {
+    // Start directly with environment camera to avoid iOS Safari front-camera lock issue
+    // which happens when getCameras() triggers a generic getUserMedia().
+    const startCamera = (facingMode: any) => {
+       html5QrCode.start(
+         facingMode,
+         {
+           fps: 20,    
+           qrbox: { width: 300, height: 150 },
+           videoConstraints: {
                width: { ideal: 1280 },
                height: { ideal: 720 },
                advanced: [{ focusMode: "continuous" } as any]
-            }
-          },
-          (decodedText) => {
-            html5QrCode.stop().then(() => {
-              onScan(decodedText);
-            }).catch(err => {
+           }
+         },
+         (decodedText) => {
+           html5QrCode.stop().then(() => {
+             onScan(decodedText);
+           }).catch(err => {
                onScan(decodedText);
                console.error("Failed to stop scanning.", err);
-            });
-          },
-          (errorMessage) => {
-            // Ignore normal non-detection frames
-          }
-        ).catch(err => {
-            setIsError("Kamarada lama shidi karin, malaha waa Loo-diiday (Permission Denied).");
-            console.error("Camera start error:", err);
-        });
-      } else {
-        setIsError("Kamarad koombuyuutarka kuma xirna ama lama ogaan.");
-      }
-    }).catch(err => {
-        setIsError("Fadlan u ogolaw Browser-ka inuu Kamarada isticmaalo.");
-        console.error("Get cameras error:", err);
-    });
+           });
+         },
+         (errorMessage) => {
+           // Ignore normal non-detection frames
+         }
+       ).catch(err => {
+           if (facingMode.exact) {
+              // Priority 1 failed, trying Priority 2 (relaxed environment constraint)
+              startCamera({ facingMode: "environment" });
+           } else {
+              setIsError("Kamarada Iisha gadaale waa la furi waayay. (Ma cillad baa jirta?)");
+              console.error("Camera start error:", err);
+           }
+       });
+    };
+
+    // Trigger priority 1
+    startCamera({ facingMode: { exact: "environment" } });
 
     // Cleanup on unmount
     return () => {
