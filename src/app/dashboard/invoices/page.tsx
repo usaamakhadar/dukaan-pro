@@ -210,7 +210,7 @@ export default function InvoicesPage() {
         </div>
 
         {/* Right Preview */}
-        <div className="md:col-span-2 space-y-6">
+        <div className="md:col-span-2 space-y-6 pb-24 md:pb-6">
 
           {selectedSale ? (
             <>
@@ -381,12 +381,12 @@ export default function InvoicesPage() {
 
           {/* Action Panel */}
           {selectedSale && (
-            <div className="grid grid-cols-2 gap-4 print:hidden">
-               <Button className="w-full bg-[#141b2d] hover:bg-[#1f2945] text-white rounded-xl h-14 text-md font-bold shadow-xl shadow-[#141b2d]/10 active:scale-[0.98] transition-all" onClick={handlePrintReceipt}>
-                 <Printer className="mr-3 h-5 w-5" /> {lang === 'en' ? 'Print Receipt' : 'Daabac Rasiidhka (Thermal)'}
+            <div className="grid grid-cols-2 gap-3 shrink-0 mt-6 lg:mt-0">
+               <Button className="w-full bg-[#141b2d] hover:bg-[#1f2945] text-white rounded-xl h-14 text-xs sm:text-sm font-bold shadow-xl active:scale-[0.98] transition-all px-2 overflow-hidden" onClick={handlePrintReceipt}>
+                 <Printer className="mr-1.5 h-4 w-4 shrink-0" /> {lang === 'en' ? 'Thermal Receipt' : 'Rasiidh (Thermal)'}
                </Button>
-               <Button className="w-full h-14 border border-blue-200 bg-blue-50 text-blue-700 hover:bg-blue-100 rounded-xl text-md font-bold active:scale-[0.98] transition-all shadow-md" onClick={handlePrintInvoice}>
-                 <Download className="mr-3 h-5 w-5" /> {lang === 'en' ? 'Download A4 PDF' : 'Soo deji Invoice PDF'}
+               <Button className="w-full h-14 border border-blue-200 bg-blue-50 text-blue-700 hover:bg-blue-100 rounded-xl text-xs sm:text-sm font-bold active:scale-[0.98] transition-all shadow-md px-2 overflow-hidden" onClick={handlePrintInvoice}>
+                 <Download className="mr-1.5 h-4 w-4 shrink-0" /> {lang === 'en' ? 'A4 Invoice' : 'Qaansheeg (A4)'}
                </Button>
             </div>
           )}
