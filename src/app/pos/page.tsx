@@ -258,7 +258,7 @@ export default function POSPage() {
       const { data: saleData, error: saleError } = await supabase.from('sales').insert([{
         tenant_id: tenantId,
         cashier_id: cashierId,
-        customer_id: selectedCustomer ? selectedCustomer.id : null,
+        customer_id: selectedCustomer && selectedCustomer.id !== 'guest' ? selectedCustomer.id : null,
         subtotal: subtotal,
         discount: 0,
         tax: vatAmount,
@@ -596,12 +596,24 @@ export default function POSPage() {
             </span>
           </div>
           <div className="flex justify-between items-center cursor-pointer hover:opacity-80 transition-opacity">
-            <div className="flex items-center text-zinc-700 text-sm font-medium">
+            <div 
+              className="flex items-center text-zinc-700 text-sm font-medium cursor-pointer hover:text-blue-600 transition-colors"
+              onClick={() => {
+                 if (!selectedCustomer) {
+                    const tempName = window.prompt(lang === 'en' ? "Enter walk-in name (Optional):" : "Gali magaca socotada (Ikhtiyaari):");
+                    if (tempName) {
+                       setSelectedCustomer({ id: 'guest', name: tempName, phone: '' });
+                    } else {
+                       toast.success(lang === 'en' ? "Walk-In Mode Ready. Just add items!" : "Waa diyaar! Qofka socotada ah magac uma baahna, alaabta ka iibi.");
+                    }
+                 }
+              }}
+            >
               <Users className="h-4 w-4 mr-2 text-zinc-400" />
               {selectedCustomer ? (
                 <div className="flex items-center">
                   <span className="font-bold text-[#141b2d]">{selectedCustomer.name}</span>
-                  <button onClick={() => setSelectedCustomer(null)} className="ml-2 text-red-500 hover:text-red-700">
+                  <button onClick={(e) => { e.stopPropagation(); setSelectedCustomer(null); }} className="ml-2 text-red-500 hover:text-red-700">
                     <X className="h-4 w-4" />
                   </button>
                 </div>
