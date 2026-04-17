@@ -179,7 +179,7 @@ export default function InvoicesPage() {
               placeholder={lang === 'en' ? "Search Invoice..." : "Raadi Bill..."}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-10 pr-4 py-3 bg-white border border-zinc-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#0b132b]/20"
+              className="w-full pl-10 pr-4 py-3 bg-white border border-zinc-200 rounded-xl text-base focus:outline-none focus:ring-2 focus:ring-[#0b132b]/20"
             />
           </div>
           {isLoading ? (

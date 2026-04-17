@@ -387,7 +387,7 @@ export default function POSPage() {
           @page { size: 80mm auto; margin: 0; }
         }
       `}</style>
-      <div className="flex h-screen bg-white text-zinc-900 overflow-hidden font-sans">
+      <div className="flex h-[100dvh] bg-white text-zinc-900 overflow-hidden font-sans w-full max-w-[100vw]">
       
       {/* 1. SIDEBAR */}
       <aside className="w-[240px] bg-[#0b132b] text-zinc-400 flex flex-col justify-between hidden md:flex shrink-0">
@@ -465,14 +465,14 @@ export default function POSPage() {
                </SheetContent>
             </Sheet>
 
-            <div className="relative w-full max-w-xs md:max-w-md">
-              <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-zinc-400" />
+            <div className="relative w-full max-w-[200px] sm:max-w-xs md:max-w-md shrink">
+              <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-zinc-400 pointer-events-none" />
               <input 
                 type="text" 
                 placeholder={lang === 'en' ? "Search..." : "Raadi..."}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-11 md:pl-12 pr-4 py-2.5 md:py-3 bg-[#eef0f3] border-none rounded-xl text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-[#0b132b]/20 text-[#141b2d] placeholder-zinc-500"
+                className="w-full pl-11 md:pl-12 pr-4 py-2.5 md:py-3 bg-[#eef0f3] border-none rounded-xl text-base focus:outline-none focus:ring-2 focus:ring-[#0b132b]/20 text-[#141b2d] placeholder-zinc-500"
               />
             </div>
           </div>

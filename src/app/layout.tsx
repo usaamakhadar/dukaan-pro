@@ -11,13 +11,19 @@ export const metadata: Metadata = {
   title: "Dukaan Pro | Premium Retail",
   description: "Advanced Multi-tenant Point of Sale system.",
   manifest: "/manifest.json",
-  themeColor: "#0b132b",
-  viewport: "width=device-width, initial-scale=1, maximum-scale=1",
   appleWebApp: {
     capable: true,
     title: "Dukaan Pro",
     statusBarStyle: "black-translucent",
   }
+};
+
+export const viewport = {
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
+  themeColor: "#0b132b",
 };
 
 export default function RootLayout({
@@ -27,7 +33,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className={`${inter.className} min-h-screen bg-white text-zinc-900 antialiased`}>
+      <body className={`${inter.className} min-h-[100dvh] bg-white text-zinc-900 antialiased`}>
         <LanguageProvider>
           {children}
           <Toaster />
