@@ -19,6 +19,8 @@ import { toast } from "sonner";
 import { useLanguage } from "@/lib/i18n";
 import { createClient } from "@/lib/supabase/client";
 import BarcodeScannerCamera from "@/components/BarcodeScannerCamera";
+import html2canvas from 'html2canvas';
+import { jsPDF } from 'jspdf';
 
 export default function POSPage() {
   const { t, lang, setLang } = useLanguage();
@@ -327,6 +329,39 @@ export default function POSPage() {
 
   const handleDiscard = () => {
     setCart([]);
+  };
+
+  const handleDownloadReceipt = async (type: 'pdf' | 'image') => {
+     const element = document.getElementById('receipt-print-area');
+     if (!element) return;
+     
+     toast.loading(lang === 'en' ? "Generating file..." : "Waa la diyaarinayaa...");
+     try {
+         const canvas = await html2canvas(element, { scale: 3, useCORS: true, backgroundColor: '#ffffff' });
+         const imgData = canvas.toDataURL('image/png');
+         const fileName = `receipt-${lastSaleData.id.slice(0,8)}.pdf`;
+
+         if (type === 'image') {
+            const link = document.createElement('a');
+            link.download = fileName.replace('.pdf', '.png');
+            link.href = imgData;
+            link.click();
+         } else {
+            const pdf = new jsPDF({
+               orientation: 'portrait',
+               unit: 'mm',
+               format: [80, (canvas.height * 80) / canvas.width]
+            });
+            pdf.addImage(imgData, 'PNG', 0, 0, 80, (canvas.height * 80) / canvas.width);
+            pdf.save(fileName);
+         }
+         
+         toast.dismiss();
+         toast.success(lang === 'en' ? "Downloaded!" : "Waa la soo dejiyay!");
+     } catch(err) {
+         toast.dismiss();
+         toast.error("Failed to generate receipt.");
+     }
   };
 
   const toggleLang = () => {
@@ -819,14 +854,14 @@ export default function POSPage() {
 
        {/* 6. RECEIPT MODAL (Authentic Somaliland Style) */}
        {showReceipt && lastSaleData && (
-         <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/70 backdrop-blur-sm p-4 print:p-0 print:block overflow-y-auto">
-            <div className="bg-white text-[#141b2d] w-full max-w-[340px] shadow-2xl relative overflow-hidden font-mono text-[12px] border border-zinc-200 m-auto print-target">
+         <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 overflow-y-auto">
+            <div className="bg-white text-[#141b2d] w-full max-w-[340px] shadow-2xl relative overflow-hidden font-mono text-[12px] border border-zinc-200 m-auto mx-auto my-12 flex flex-col max-h-[90vh]">
                {/* Success Banner (UI only) */}
-               <div className="bg-green-600 text-white text-center py-1 text-[10px] font-bold uppercase tracking-widest print:hidden">
+               <div className="bg-green-600 text-white text-center py-1 text-[10px] font-bold uppercase tracking-widest shrink-0">
                   {lang === 'en' ? 'Transaction Success' : 'Iibka waa xarooday'}
                </div>
 
-               <div className="p-5 print:p-0">
+               <div id="receipt-print-area" className="p-5 overflow-y-auto custom-scrollbar bg-white">
                   {/* Thermal Header */}
                   <div className="text-center space-y-0.5 mb-4">
                      <p className="font-bold text-[10px] uppercase">Sales Receipt #{lastSaleData.id.slice(0, 8).toUpperCase()}</p>
@@ -913,11 +948,14 @@ export default function POSPage() {
                </div>
 
                {/* UI Buttons */}
-               <div className="p-4 bg-zinc-50 border-t border-zinc-100 grid grid-cols-2 gap-2 print:hidden">
-                  <Button onClick={() => window.print()} className="bg-[#141b2d] hover:bg-black text-white font-bold rounded-lg h-10 shadow-sm text-xs">
-                     🖨️ Print Receipt
+               <div className="p-4 bg-zinc-50 border-t border-zinc-100 grid grid-cols-2 gap-2 shrink-0">
+                  <Button onClick={() => handleDownloadReceipt('image')} className="bg-[#141b2d] hover:bg-black text-white font-bold rounded-lg h-10 shadow-sm text-xs">
+                     ⬇️ {lang === 'en' ? 'Save Image' : 'Soo deji (Sawir)'}
                   </Button>
-                  <Button variant="outline" onClick={() => setShowReceipt(false)} className="border-zinc-200 text-zinc-600 font-bold rounded-lg h-10 text-xs">
+                  <Button onClick={() => handleDownloadReceipt('pdf')} className="border-blue-200 bg-blue-50 text-blue-700 hover:bg-blue-100 font-bold rounded-lg h-10 shadow-sm text-xs">
+                     📄 {lang === 'en' ? 'Save PDF' : 'Soo deji (PDF)'}
+                  </Button>
+                  <Button variant="outline" onClick={() => setShowReceipt(false)} className="col-span-2 border-zinc-200 text-zinc-600 font-bold rounded-lg h-10 text-xs mt-2">
                      Back to POS
                   </Button>
                </div>

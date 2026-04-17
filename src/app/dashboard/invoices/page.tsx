@@ -6,6 +6,9 @@ import { Download, Printer, Search } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { createClient } from "@/lib/supabase/client";
 import { useLanguage } from "@/lib/i18n";
+import html2canvas from 'html2canvas';
+import { jsPDF } from 'jspdf';
+import { toast } from "sonner";
 
 export default function InvoicesPage() {
   const { t, lang } = useLanguage();
@@ -80,22 +83,69 @@ export default function InvoicesPage() {
     sale.payment_method.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  const handlePrintReceipt = () => {
-    setPrintMode('receipt');
-    if (receiptRef.current) {
-        setReceiptHeight(`${receiptRef.current.offsetHeight + 10}px`);
+  const handlePrintReceipt = async () => {
+    if (!receiptRef.current || !selectedSale) return;
+    toast.loading(lang === 'en' ? "Preparing Receipt..." : "Waa la diyaarinayaa (Thermal)...");
+    
+    // Temporarily ensure it is fully visible before capture
+    const el = receiptRef.current;
+    
+    try {
+      const canvas = await html2canvas(el, { scale: 3, useCORS: true, backgroundColor: '#ffffff' });
+      const imgData = canvas.toDataURL('image/png');
+      const link = document.createElement('a');
+      link.download = `receipt-${selectedSale.id.slice(0,8)}.png`;
+      link.href = imgData;
+      link.click();
+      toast.dismiss();
+      toast.success(lang === 'en' ? 'Downloaded!' : 'Waa la soo dejiyay!');
+    } catch(err) {
+      toast.dismiss();
+      toast.error('Galdaloolo ayaa dhacday.');
     }
-    setTimeout(() => window.print(), 100);
   };
 
-  const handlePrintInvoice = () => {
-    setPrintMode('invoice');
-    if (invoiceRef.current) {
-        setInvoiceHeight(`${invoiceRef.current.offsetHeight + 10}px`);
-    } else {
-        setInvoiceHeight('297mm');
+  const handlePrintInvoice = async () => {
+    if (!invoiceRef.current || !selectedSale) return;
+    toast.loading(lang === 'en' ? "Preparing A4 PDF..." : "Qaansheegta (A4 PDF) waa la diyaarinayaa...");
+    
+    const el = invoiceRef.current;
+    const oldLeft = el.style.left;
+    const oldTop = el.style.top;
+    
+    // Bring it to the screen temporarily for render
+    el.style.left = '0';
+    el.style.top = '0';
+    el.style.position = 'fixed';
+    el.style.zIndex = '-9999';
+
+    try {
+      const canvas = await html2canvas(el, { scale: 2, useCORS: true, backgroundColor: '#ffffff' });
+      const imgData = canvas.toDataURL('image/png');
+      
+      const pdf = new jsPDF({
+         orientation: 'portrait',
+         unit: 'mm',
+         format: 'a4'
+      });
+
+      const pdfWidth = pdf.internal.pageSize.getWidth();
+      const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
+
+      pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
+      pdf.save(`invoice-${selectedSale.id.slice(0,8)}.pdf`);
+      
+      toast.dismiss();
+      toast.success(lang === 'en' ? 'PDF Downloaded!' : 'PDF waa la kaydiyay!');
+    } catch(err) {
+      toast.dismiss();
+      toast.error('Galdaloolo ayaa dhacday dhanka PDF-ta.');
+    } finally {
+      // Restore
+      el.style.left = oldLeft;
+      el.style.top = oldTop;
+      el.style.position = 'absolute';
     }
-    setTimeout(() => window.print(), 100);
   };
 
   const getPaymentName = (pm: string) => {
@@ -157,33 +207,13 @@ export default function InvoicesPage() {
         </div>
 
         {/* Right Preview */}
-        {/* Right Preview */}
         <div className="md:col-span-2 space-y-6">
-          <style>{`
-             @media print {
-               html, body {
-                 background: white !important;
-               }
-               body * { visibility: hidden; }
-               .print-target, .print-target * { visibility: visible; }
-               .print-target { 
-                  ${printMode === 'receipt' ? 'position: absolute !important; left: 0 !important; top: 0 !important;' : 'position: relative !important; margin: auto !important; left: 0 !important; top: 0 !important;'}
-                  box-shadow: none !important; 
-                  border: none !important; 
-                  background: white !important;
-               }
-             }
-             @page {
-                margin: 0;
-                ${printMode === 'invoice' ? `size: 210mm ${invoiceHeight};` : `size: 80mm ${receiptHeight};`}
-             }
-          `}</style>
 
           {selectedSale ? (
             <>
                {/* ----------------- THERMAL RECEIPT ----------------- */}
-               <Card ref={receiptRef} className={`bg-white text-[#141b2d] border border-zinc-200 shadow-2xl relative overflow-hidden font-mono text-[12px] mx-auto w-full max-w-[340px] ${printMode === 'receipt' ? 'print-target' : 'print:hidden'}`}>
-                 <div className={`p-5 ${printMode === 'receipt' ? 'print:p-3 print:w-[78mm] print:mx-auto' : ''}`}>
+               <Card ref={receiptRef} className={`bg-white text-[#141b2d] border border-zinc-200 shadow-2xl relative overflow-hidden font-mono text-[12px] mx-auto w-full max-w-[340px]`}>
+                 <div className="p-5">
                      {/* Thermal Header */}
                      <div className="text-center space-y-0.5 mb-4">
                         <p className="font-bold text-[10px] uppercase">Sales Receipt #{selectedSale.id.slice(0, 8).toUpperCase()}</p>
@@ -267,7 +297,7 @@ export default function InvoicesPage() {
                </Card>
 
                {/* ----------------- A4 INVOICE (RENDERED OFF-SCREEN SO HEIGHT CAN BE CALCULATED) ----------------- */}
-               <div ref={invoiceRef} className={`absolute top-[-9999px] left-[-9999px] ${printMode === 'invoice' ? 'print:relative print:top-0 print:left-0 print:flex print-target' : 'print:hidden'} bg-white text-[#141b2d] font-sans p-12 w-[210mm] mx-auto flex-col justify-between`}>
+               <div ref={invoiceRef} className="absolute top-[-9999px] left-[-9999px] bg-white text-[#141b2d] font-sans p-12 w-[210mm] mx-auto flex-col justify-between" style={{ opacity: 1, display: 'flex' }}>
                   <div>
                      <div className="flex justify-between items-start border-b-2 border-[#141b2d] pb-8 mb-8">
                      <div>
