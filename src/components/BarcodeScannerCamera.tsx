@@ -31,17 +31,8 @@ export default function BarcodeScannerCamera({ onScan, onClose, title = "Scan Ba
 
     Html5Qrcode.getCameras().then(devices => {
       if (devices && devices.length > 0) {
-        // Find best camera (prefer back/environment camera if available)
-        let cameraId = devices[0].id;
-        for (const device of devices) {
-           if (device.label.toLowerCase().includes("back") || device.label.toLowerCase().includes("environment")) {
-              cameraId = device.id;
-              break;
-           }
-        }
-        
         html5QrCode.start(
-          cameraId,
+          { facingMode: "environment" },
           {
             fps: 20,    
             qrbox: { width: 300, height: 150 },

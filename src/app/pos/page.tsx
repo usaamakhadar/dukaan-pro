@@ -334,7 +334,25 @@ export default function POSPage() {
   };
 
   return (
-    <div className="flex h-screen bg-white text-zinc-900 overflow-hidden font-sans">
+    <>
+      <style>{`
+        @media print {
+          body * { visibility: hidden; }
+          .print-target, .print-target * { visibility: visible; }
+          .print-target { 
+            position: absolute !important; 
+            left: 0 !important; 
+            top: 0 !important; 
+            margin: 0;
+            padding: 0;
+            background: white;
+            box-shadow: none !important;
+            border: none !important;
+          }
+          @page { size: 80mm auto; margin: 0; }
+        }
+      `}</style>
+      <div className="flex h-screen bg-white text-zinc-900 overflow-hidden font-sans">
       
       {/* 1. SIDEBAR */}
       <aside className="w-[240px] bg-[#0b132b] text-zinc-400 flex flex-col justify-between hidden md:flex shrink-0">
@@ -789,8 +807,8 @@ export default function POSPage() {
 
        {/* 6. RECEIPT MODAL (Authentic Somaliland Style) */}
        {showReceipt && lastSaleData && (
-         <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/70 backdrop-blur-sm p-4">
-            <div className="bg-white text-[#141b2d] w-full max-w-[340px] shadow-2xl relative overflow-hidden font-mono text-[12px] border border-zinc-200">
+         <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/70 backdrop-blur-sm p-4 print:p-0 print:block overflow-y-auto">
+            <div className="bg-white text-[#141b2d] w-full max-w-[340px] shadow-2xl relative overflow-hidden font-mono text-[12px] border border-zinc-200 m-auto print-target">
                {/* Success Banner (UI only) */}
                <div className="bg-green-600 text-white text-center py-1 text-[10px] font-bold uppercase tracking-widest print:hidden">
                   {lang === 'en' ? 'Transaction Success' : 'Iibka waa xarooday'}
@@ -908,5 +926,6 @@ export default function POSPage() {
         </Button>
       </div>
     </div>
+    </>
   );
 }
