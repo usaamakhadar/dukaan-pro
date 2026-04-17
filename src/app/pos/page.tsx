@@ -346,7 +346,7 @@ export default function POSPage() {
          if (type === 'image') {
             download(imgData, fileName.replace('.pdf', '.png'), 'image/png');
          } else {
-            const tempImg = new Image();
+            const tempImg = new window.Image();
             tempImg.src = imgData;
             await new Promise(resolve => tempImg.onload = resolve);
             

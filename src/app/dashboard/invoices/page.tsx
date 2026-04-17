@@ -121,7 +121,7 @@ export default function InvoicesPage() {
     try {
       const imgData = await toPng(el, { quality: 1, pixelRatio: 2, backgroundColor: '#ffffff' });
       
-      const tempImg = new Image();
+      const tempImg = new window.Image();
       tempImg.src = imgData;
       await new Promise(resolve => tempImg.onload = resolve);
 
