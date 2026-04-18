@@ -94,8 +94,15 @@ export default function POSPage() {
       setUserName(storedName || defaultName);
       setEditName(storedName || defaultName);
       if (storedPic) {
-        setProfilePic(storedPic);
-        setEditPic(storedPic);
+        if (storedPic.startsWith('data:image') && storedPic.length > 10000) {
+          const defaultPic = "https://i.pravatar.cc/150?u=" + user.id;
+          setProfilePic(defaultPic);
+          setEditPic(defaultPic);
+          supabase.auth.updateUser({ data: { avatar_url: defaultPic } });
+        } else {
+          setProfilePic(storedPic);
+          setEditPic(storedPic);
+        }
       }
       setCashierId(user.id);
 
@@ -177,31 +184,39 @@ export default function POSPage() {
         img.src = reader.result;
         img.onload = () => {
           const canvas = document.createElement('canvas');
-          const MAX_WIDTH = 200;
-          const MAX_HEIGHT = 200;
+          const MAX_WIDTH = 100;
+          const MAX_HEIGHT = 100;
           let width = img.width;
           let height = img.height;
 
           if (width > height) {
-            if (width > MAX_WIDTH) {
-              height *= MAX_WIDTH / width;
-              width = MAX_WIDTH;
-            }
+            if (width > MAX_WIDTH) { height *= MAX_WIDTH / width; width = MAX_WIDTH; }
           } else {
-            if (height > MAX_HEIGHT) {
-              width *= MAX_HEIGHT / height;
-              height = MAX_HEIGHT;
-            }
+            if (height > MAX_HEIGHT) { width *= MAX_HEIGHT / height; height = MAX_HEIGHT; }
           }
           canvas.width = width;
           canvas.height = height;
           const ctx = canvas.getContext('2d');
           ctx?.drawImage(img, 0, 0, width, height);
-          const dataUrl = canvas.toDataURL('image/jpeg', 0.7);
+          const dataUrl = canvas.toDataURL('image/jpeg', 0.5);
+          
+          if (dataUrl.length > 8000) {
+            toast.error(lang === 'en' ? "Image quality too high." : "Sawirka waa uu weyn yahay wali.");
+            return;
+          }
           setEditPic(dataUrl);
         };
       };
       reader.readAsDataURL(file);
+    }
+  };
+
+  const handleLogout = async () => {
+    const supabase = createClient();
+    await supabase.auth.signOut();
+    if (typeof window !== "undefined") {
+      localStorage.clear();
+      window.location.replace('/login');
     }
   };
 
@@ -594,16 +609,13 @@ export default function POSPage() {
                     <p className="text-sm font-semibold text-zinc-900 group-hover:text-blue-600 transition-colors uppercase">{userName}</p>
                     <p className="text-[10px] font-bold tracking-widest text-zinc-400 uppercase">{userRole === 'STORE MANAGER' && lang === 'so' ? t('store_manager') : userRole}</p>
                   </div>
-                  <div className="h-9 w-9 md:h-10 md:w-10 bg-zinc-300 rounded-full overflow-hidden border-2 border-white shadow-sm ring-2 ring-transparent group-hover:ring-blue-100 transition-all">
-                    <img src={profilePic} alt="Profile" className="w-full h-full object-cover"/>
-                  </div>
+                  <div className="h-8 w-8 md:h-10 md:w-10 bg-zinc-300 rounded-full overflow-hidden border-2 border-white shadow-sm ring-2 ring-transparent group-hover:ring-green-100 transition-all">
+                  <img src={profilePic} alt="Profile" className="w-full h-full object-cover" />
+                </div>
               </DialogTrigger>
               <DialogContent className="sm:max-w-[425px] rounded-2xl bg-white border-zinc-200">
                 <DialogHeader>
-                  <DialogTitle className="text-2xl font-bold text-[#141b2d]">{t('edit_profile')}</DialogTitle>
-                  <DialogDescription>
-                    {t('profile_instructions')}
-                  </DialogDescription>
+                  <DialogTitle className="text-2xl font-bold text-[#141b2d]">{lang === 'en' ? 'Manage Account' : 'Maamuska Akoonka'}</DialogTitle>
                 </DialogHeader>
                 <div className="grid gap-6 py-4">
                   <div className="flex items-center justify-center mb-2">
@@ -632,17 +644,23 @@ export default function POSPage() {
                   </div>
                   <div className="grid gap-2">
                     <label className="text-sm font-bold text-[#141b2d]">{t('upload_picture')}</label>
-                    <input 
+                    <Input 
                       type="file"
                       accept="image/*"
                       onChange={handleImageUpload}
-                      className="w-full bg-[#f9f9fb] rounded-md h-12 pt-2.5 px-3 cursor-pointer text-sm focus:outline-none"
+                      className="bg-[#f9f9fb] h-12 pt-2.5 cursor-pointer"
                     />
                   </div>
                 </div>
-                <DialogFooter>
-                  <Button variant="outline" onClick={() => setIsDialogOpen(false)} className="h-12 rounded-xl">{t('cancel')}</Button>
-                  <Button onClick={handleSaveProfile} className="h-12 bg-[#141b2d] hover:bg-[#1f2945] rounded-xl px-8">{t('save_changes')}</Button>
+                <DialogFooter className="flex-col sm:flex-row gap-3">
+                  <Button 
+                    variant="outline" 
+                    onClick={handleLogout} 
+                    className="h-12 border-red-200 text-red-600 hover:bg-red-50 rounded-xl"
+                  >
+                    {lang === 'en' ? 'Logout' : 'Ka bax'}
+                  </Button>
+                  <Button onClick={handleSaveProfile} className="h-12 bg-green-600 hover:bg-green-700 rounded-xl px-8 flex-1">{t('save_changes')}</Button>
                 </DialogFooter>
               </DialogContent>
             </Dialog>

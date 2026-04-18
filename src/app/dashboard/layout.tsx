@@ -70,8 +70,17 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         setUserName(storedName || defaultName);
         setEditName(storedName || defaultName);
         if (storedPic) { 
-           setProfilePic(storedPic); 
-           setEditPic(storedPic); 
+           // Emergency fix for 494 Error: If picture is a huge base64, reset it
+           if (storedPic.startsWith('data:image') && storedPic.length > 10000) {
+              const defaultPic = "https://i.pravatar.cc/150?u=" + user.id;
+              setProfilePic(defaultPic);
+              setEditPic(defaultPic);
+              // Update Supabase immediately to fix header size for next time
+              supabase.auth.updateUser({ data: { avatar_url: defaultPic } });
+           } else {
+              setProfilePic(storedPic); 
+              setEditPic(storedPic); 
+           }
         }
         
         // Fetch Tenant and Role
@@ -118,8 +127,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         img.src = reader.result;
         img.onload = () => {
           const canvas = document.createElement('canvas');
-          const MAX_WIDTH = 200;
-          const MAX_HEIGHT = 200;
+          const MAX_WIDTH = 100;
+          const MAX_HEIGHT = 100;
           let width = img.width;
           let height = img.height;
 
@@ -138,7 +147,12 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           canvas.height = height;
           const ctx = canvas.getContext('2d');
           ctx?.drawImage(img, 0, 0, width, height);
-          const dataUrl = canvas.toDataURL('image/jpeg', 0.7);
+          const dataUrl = canvas.toDataURL('image/jpeg', 0.5); // Lower quality for metadata safety
+          
+          if (dataUrl.length > 8000) {
+            toast.error(lang === 'en' ? "Image quality too high, try a simpler photo." : "Sawirka waa uu weyn yahay wali, fadlan mid kale isku day.");
+            return;
+          }
           setEditPic(dataUrl);
         };
       };
@@ -180,6 +194,15 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     setLang(lang === 'en' ? 'so' : 'en');
   };
 
+  const handleLogout = async () => {
+    const supabase = createClient();
+    await supabase.auth.signOut();
+    if (typeof window !== "undefined") {
+      localStorage.clear(); // Clear everything
+      window.location.replace('/login');
+    }
+  };
+
   return (
     <div className="flex h-screen bg-white text-zinc-900 overflow-hidden font-sans print:h-auto print:overflow-visible">
       
@@ -214,12 +237,20 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           </nav>
         </div>
         
-        <div className="p-6">
+        <div className="p-6 space-y-3">
           <Link href="/pos">
             <Button className="w-full bg-[#8fa4cf]/80 hover:bg-[#8fa4cf] text-[#0b132b] font-semibold py-6 rounded-xl shadow-lg transition-transform active:scale-95">
               {t('new_sale')}
             </Button>
           </Link>
+          <Button 
+            variant="ghost" 
+            onClick={handleLogout}
+            className="w-full text-zinc-500 hover:text-red-400 hover:bg-red-400/10 justify-start py-6 rounded-xl transition-all"
+          >
+            <LogOut className="h-5 w-5 mr-4" />
+            {lang === 'en' ? 'Logout' : 'Ka bax'}
+          </Button>
         </div>
       </aside>
 
