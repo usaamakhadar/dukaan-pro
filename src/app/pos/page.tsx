@@ -94,11 +94,11 @@ export default function POSPage() {
       setUserName(storedName || defaultName);
       setEditName(storedName || defaultName);
       if (storedPic) {
-        if (storedPic.startsWith('data:image') && storedPic.length > 10000) {
-          const defaultPic = "https://i.pravatar.cc/150?u=" + user.id;
+        if (storedPic.startsWith('data:image')) {
+          const defaultPic = "https://ui-avatars.com/api/?name=" + (storedName || "U") + "&background=0b132b&color=fff";
           setProfilePic(defaultPic);
           setEditPic(defaultPic);
-          supabase.auth.updateUser({ data: { avatar_url: defaultPic } });
+          supabase.auth.updateUser({ data: { avatar_url: null } });
         } else {
           setProfilePic(storedPic);
           setEditPic(storedPic);
@@ -235,9 +235,12 @@ export default function POSPage() {
       data: { 
         full_name: editName,
         role: editRole,
-        avatar_url: editPic
+        // REMOVED avatar_url to fix 494 error
       }
     });
+
+    // Clear huge metadata immediately
+    await supabase.auth.updateUser({ data: { avatar_url: null } });
 
     if (error) {
        toast.error(lang === 'en' ? "Failed to save profile cloud-side" : "Waa la waayay kaydinta xogta profile-ka.");

@@ -70,13 +70,13 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         setUserName(storedName || defaultName);
         setEditName(storedName || defaultName);
         if (storedPic) { 
-           // Emergency fix for 494 Error: If picture is a huge base64, reset it
-           if (storedPic.startsWith('data:image') && storedPic.length > 10000) {
-              const defaultPic = "https://i.pravatar.cc/150?u=" + user.id;
+           // Emergency fix for 494 Error: REMOVE all base64 avatars from metadata
+           if (storedPic.startsWith('data:image')) {
+              const defaultPic = "https://ui-avatars.com/api/?name=" + (storedName || "U") + "&background=0b132b&color=fff";
               setProfilePic(defaultPic);
               setEditPic(defaultPic);
-              // Update Supabase immediately to fix header size for next time
-              supabase.auth.updateUser({ data: { avatar_url: defaultPic } });
+              // Clean the poisoning immediately!
+              supabase.auth.updateUser({ data: { avatar_url: null } });
            } else {
               setProfilePic(storedPic); 
               setEditPic(storedPic); 
@@ -172,14 +172,19 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
        localStorage.setItem("profilePic", editPic);
     }
 
-    // Persist to Supabase Auth Metadata
+    // Persist to Supabase Auth Metadata (ONLY name and role, NO IMAGE)
     const supabase = createClient();
     const { error } = await supabase.auth.updateUser({
       data: { 
         full_name: editName,
         role: editRole,
-        avatar_url: editPic
+        // REMOVED avatar_url as it causes 494 Request Header Too Large
       }
+    });
+
+    // Also clear it from database if it exists to fix the 494 error for this user
+    await supabase.auth.updateUser({
+        data: { avatar_url: null }
     });
 
     if (error) {
