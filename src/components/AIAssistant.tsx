@@ -70,7 +70,16 @@ export default function AIAssistant() {
   const generateAIResponse = (query: string, language: string): string => {
     const q = query.toLowerCase();
     
-    if (language === 'so') {
+    // Automatic Language Detection (Basic)
+    const somaliKeywords = ['ma', 'waa', 'sidee', 'ka', 'ku', 'iyo', 'yahay', 'tahay', 'jira', 'ilaa', 'ila', 'hagaaji', 'qabo', 'taqaan', 'hadashaa', 'bilaa', 'cusubahay'];
+    const isSomaliQuery = somaliKeywords.some(word => q.includes(' ' + word + ' ') || q.startsWith(word + ' ') || q.endsWith(' ' + word) || q === word);
+    
+    // If user asks if it knows Somali directly
+    if (q.includes('somali') || q.includes('soomaali') || q.includes('af somali')) {
+       return "Haa sxb, af-Soomaaliga si fiican baan u aqaan! Sideen kuu caawin karaa maanta? Waxaan kaa caawin karaa Inventory-ga, POS-ka, iyo wixii cilad ah.";
+    }
+
+    if (language === 'so' || isSomaliQuery) {
       if (q.includes('sawir') || q.includes('image') || q.includes('img')) {
         return "Si aad sawir ugu darto badeecada, tag Inventory, riix 'Add Product' ama 'Edit', kadibna riix calaamada kamarada (camera icon). Waxaan hadda ku daray 'Image Compressor' si sawiradu uusan error u bixin.";
       }
@@ -83,7 +92,10 @@ export default function AIAssistant() {
       if (q.includes('magac') || q.includes('profile')) {
         return "Si aad u badasho magacaaga ama sawirkaaga, riix profile-kaaga geeska sare (Dashboard ama POS), kadibna dooro 'Edit Profile'.";
       }
-      return "Waan ku maqlayaa. Dukaan Pro AI ahaan, waxaan halkan u joogaa inaan dukaankaaga kaa caawiyo. Ma rabtaa inaan kaa caawiyo Inventory-ga, Sales-ka, mise Profile-ka?";
+      if (q.includes('bilaa') || q.includes('cusub')) {
+        return "Ku soo dhawaaw sxb! Si aad u bilaawdo, marka hore tag 'Inventory' si aad badeeco ugu darto. Kadib tag 'POS' si aad u iibiso. Haddii aad u baahato caawinaad kale meeshan iigu soo qor.";
+      }
+      return "Waan ku maqlayaa sxb. Dukaan Pro AI ahaan, waxaan halkan u joogaa inaan dukaankaaga kaa caawiyo. Ma rabtaa inaan kaa caawiyo Inventory-ga, Sales-ka, mise Profile-ka?";
     } else {
       // English responses
       if (q.includes('image') || q.includes('photo')) {
