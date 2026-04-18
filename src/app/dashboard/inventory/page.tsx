@@ -5,7 +5,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { PlusCircle, Pencil, Trash2, Camera, Search } from "lucide-react";
+import { PlusCircle, Pencil, Trash2, Camera, Search, Image as ImageIcon, Wand2 } from "lucide-react";
 import { toast } from "sonner";
 import BarcodeScannerCamera from "@/components/BarcodeScannerCamera";
 import {
@@ -340,7 +340,7 @@ export default function InventoryPage() {
                   </Badge>
                 </TableCell>
                 <TableCell className="text-right px-6">
-                  <div className="flex items-center justify-end space-x-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <div className="flex items-center justify-end space-x-2 transition-opacity">
                     <Button 
                       type="button"
                       onClick={() => handleOpenEdit(item)} 
@@ -437,7 +437,41 @@ export default function InventoryPage() {
               </div>
             </div>
             <div className="grid gap-2">
-              <label className="text-sm font-bold text-zinc-600">Image URL (Optional)</label>
+              <label className="text-sm font-bold text-zinc-600 flex justify-between items-center">
+                <span>Image URL (Optional)</span>
+                <Button 
+                  type="button" 
+                  variant="ghost" 
+                  size="sm" 
+                  className="h-6 px-2 text-blue-600 hover:bg-blue-50"
+                  onClick={() => {
+                    if (!formData.name) {
+                      toast.error(lang === 'en' ? "Enter product name first!" : "Magaca badeecada horta qor!");
+                      return;
+                    }
+                    const url = `https://images.unsplash.com/photo-1523275335684-37898b6baf30?auto=format&fit=crop&q=80&w=400&q=80`; // Default watch
+                    // Simple logic for keywords
+                    const keywords: {[key: string]: string} = {
+                      'jacket': 'https://images.unsplash.com/photo-1551028719-00167b16eac5?auto=format&fit=crop&q=80&w=400',
+                      'shirt': 'https://images.unsplash.com/photo-1521572267360-ee0c2909d518?auto=format&fit=crop&q=80&w=400',
+                      'shoe': 'https://images.unsplash.com/photo-1542291026-7eec264c27ff?auto=format&fit=crop&q=80&w=400',
+                      'bag': 'https://images.unsplash.com/photo-1548036328-c9fa89d128fa?auto=format&fit=crop&q=80&w=400',
+                      'watch': 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?auto=format&fit=crop&q=80&w=400',
+                      'laptop': 'https://images.unsplash.com/photo-1496181133206-80ce9b88a853?auto=format&fit=crop&q=80&w=400',
+                      'phone': 'https://images.unsplash.com/photo-1511706853293-961f0d38f352?auto=format&fit=crop&q=80&w=400'
+                    };
+                    const lowerName = formData.name.toLowerCase();
+                    const foundKey = Object.keys(keywords).find(k => lowerName.includes(k));
+                    const finalUrl = foundKey ? keywords[foundKey] : `https://loremflickr.com/400/400/${encodeURIComponent(lowerName)}`;
+                    
+                    setFormData({...formData, image_url: finalUrl});
+                    toast.success(lang === 'en' ? "Image generated!" : "Sawir baa loo helay!");
+                  }}
+                >
+                  <Wand2 className="h-3.5 w-3.5 mr-1" />
+                  Auto-Find Image
+                </Button>
+              </label>
               <Input 
                  placeholder="https://example.com/image.jpg"
                  className="bg-[#f9f9fb] h-11 border-zinc-200 text-[#141b2d]"
@@ -518,7 +552,24 @@ export default function InventoryPage() {
               </div>
             </div>
             <div className="grid gap-2">
-              <label className="text-sm font-bold text-zinc-600">Image URL (Optional)</label>
+              <label className="text-sm font-bold text-zinc-600 flex justify-between items-center">
+                <span>Image URL (Optional)</span>
+                <Button 
+                  type="button" 
+                  variant="ghost" 
+                  size="sm" 
+                  className="h-6 px-2 text-blue-600 hover:bg-blue-50"
+                  onClick={() => {
+                    const lowerName = formData.name.toLowerCase();
+                    const finalUrl = `https://loremflickr.com/400/400/${encodeURIComponent(lowerName)}`;
+                    setFormData({...formData, image_url: finalUrl});
+                    toast.success(lang === 'en' ? "New image found!" : "Sawir cusub baa loo helay!");
+                  }}
+                >
+                  <Wand2 className="h-3.5 w-3.5 mr-1" />
+                  Auto-Find
+                </Button>
+              </label>
               <Input 
                  placeholder="https://example.com/image.jpg"
                  className="bg-[#f9f9fb] h-11 border-zinc-200 text-[#141b2d]"

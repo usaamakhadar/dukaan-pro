@@ -23,6 +23,17 @@ import { toPng } from 'html-to-image';
 import download from 'downloadjs';
 import { jsPDF } from 'jspdf';
 
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import { Eye } from 'lucide-react';
+
 export default function POSPage() {
   const { t, lang, setLang } = useLanguage();
   const supabase = createClient();
@@ -35,6 +46,12 @@ export default function POSPage() {
   const [tenantId, setTenantId] = useState<string | null>(null);
   const [tenantSettings, setTenantSettings] = useState<any>(null);
   const [cashierId, setCashierId] = useState<string | null>(null);
+
+  // Profile Edit State
+  const [editName, setEditName] = useState("");
+  const [editRole, setEditRole] = useState("");
+  const [editPic, setEditPic] = useState(profilePic);
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
 
   // Data State
   const [dbProducts, setDbProducts] = useState<any[]>([]);
@@ -67,14 +84,17 @@ export default function POSPage() {
   const fetchSession = async () => {
     const { data: { user } } = await supabase.auth.getUser();
     if (user) {
-      const defaultName = user.email?.split('@')[0] || "User";
-      
-      const storedName = localStorage.getItem("userName");
-      const storedPic = localStorage.getItem("profilePic");
-      const storedRole = localStorage.getItem("userRole");
+      const meta = user.user_metadata;
+      const storedName = meta.full_name || localStorage.getItem("userName");
+      const storedPic = meta.avatar_url || localStorage.getItem("profilePic");
+      const storedRole = meta.role || localStorage.getItem("userRole");
       
       setUserName(storedName || defaultName);
-      if (storedPic) setProfilePic(storedPic);
+      setEditName(storedName || defaultName);
+      if (storedPic) {
+        setProfilePic(storedPic);
+        setEditPic(storedPic);
+      }
       setCashierId(user.id);
 
       const { data: roleData } = await supabase
@@ -141,6 +161,44 @@ export default function POSPage() {
     { label: t('expenses'), href: "/dashboard/expenses", icon: Wallet },
     { label: t('settings'), href: "/dashboard/settings", icon: Settings },
   ];
+
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setEditPic(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleSaveProfile = async () => {
+    setUserName(editName);
+    setUserRole(editRole);
+    setProfilePic(editPic);
+    
+    if (typeof window !== "undefined") {
+       localStorage.setItem("userName", editName);
+       localStorage.setItem("userRole", editRole);
+       localStorage.setItem("profilePic", editPic);
+    }
+
+    const { error } = await supabase.auth.updateUser({
+      data: { 
+        full_name: editName,
+        role: editRole,
+        avatar_url: editPic
+      }
+    });
+
+    if (error) {
+       toast.error(lang === 'en' ? "Failed to save profile cloud-side" : "Waa la waayay kaydinta xogta profile-ka.");
+    } else {
+       setIsDialogOpen(false);
+       toast.success(lang === 'en' ? "Profile updated! ✅" : "Xogta waa la cusboonaysiiyay! ✅");
+    }
+  };
 
   const filteredProducts = dbProducts.filter(p => {
     const categoryName = p.categories?.name || "Uncategorized";
@@ -497,15 +555,65 @@ export default function POSPage() {
                <span className="hidden md:inline">{lang === 'en' ? 'EN' : 'SO'}</span>
              </button>
             <button className="text-zinc-500 hover:text-zinc-800 transition-colors hidden sm:block font-bold"><Bell className="h-5 w-5" /></button>
-            <div className="flex items-center border-l border-zinc-200 pl-4 md:pl-6 space-x-2 md:space-x-3 cursor-pointer hover:opacity-80 transition-opacity">
-              <div className="text-right hidden sm:block">
-                <p className="text-sm font-semibold text-zinc-900">{userName}</p>
-                <p className="text-[10px] font-bold tracking-widest text-[#8fa4cf] uppercase">{userRole === 'STORE MANAGER' && lang === 'so' ? "MAAMULAHA" : userRole}</p>
-              </div>
-              <div className="h-9 w-9 md:h-10 md:w-10 bg-zinc-300 rounded-full overflow-hidden border-2 border-white shadow-sm">
-                 <img src={profilePic} alt="Profile" className="w-full h-full object-cover"/>
-              </div>
-            </div>
+            {/* PROFILE EDIT (DIALOG) */}
+            <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+              <DialogTrigger className="flex items-center border-l border-zinc-200 pl-4 md:pl-6 space-x-2 md:space-x-3 cursor-pointer group focus:outline-none bg-transparent border-none text-left p-0">
+                  <div className="text-right transition-colors group-hover:text-blue-600 hidden sm:block">
+                    <p className="text-sm font-semibold text-zinc-900 group-hover:text-blue-600 transition-colors uppercase">{userName}</p>
+                    <p className="text-[10px] font-bold tracking-widest text-zinc-400 uppercase">{userRole === 'STORE MANAGER' && lang === 'so' ? t('store_manager') : userRole}</p>
+                  </div>
+                  <div className="h-9 w-9 md:h-10 md:w-10 bg-zinc-300 rounded-full overflow-hidden border-2 border-white shadow-sm ring-2 ring-transparent group-hover:ring-blue-100 transition-all">
+                    <img src={profilePic} alt="Profile" className="w-full h-full object-cover"/>
+                  </div>
+              </DialogTrigger>
+              <DialogContent className="sm:max-w-[425px] rounded-2xl bg-white border-zinc-200">
+                <DialogHeader>
+                  <DialogTitle className="text-2xl font-bold text-[#141b2d]">{t('edit_profile')}</DialogTitle>
+                  <DialogDescription>
+                    {t('profile_instructions')}
+                  </DialogDescription>
+                </DialogHeader>
+                <div className="grid gap-6 py-4">
+                  <div className="flex items-center justify-center mb-2">
+                    <div className="h-24 w-24 rounded-full overflow-hidden border-4 border-[#f9f9fb] shadow-md relative group">
+                      <img src={editPic} alt="Preview" className="w-full h-full object-cover" />
+                      <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer">
+                        <Eye className="text-white h-6 w-6" />
+                      </div>
+                    </div>
+                  </div>
+                  <div className="grid gap-2">
+                    <label className="text-sm font-bold text-[#141b2d]">{t('new_name')}</label>
+                    <Input 
+                      value={editName}
+                      onChange={(e) => setEditName(e.target.value)}
+                      className="bg-[#f9f9fb] h-12"
+                    />
+                  </div>
+                  <div className="grid gap-2">
+                    <label className="text-sm font-bold text-[#141b2d]">{t('role')}</label>
+                    <Input 
+                      value={editRole}
+                      onChange={(e) => setEditRole(e.target.value)}
+                      className="bg-[#f9f9fb] h-12"
+                    />
+                  </div>
+                  <div className="grid gap-2">
+                    <label className="text-sm font-bold text-[#141b2d]">{t('upload_picture')}</label>
+                    <input 
+                      type="file"
+                      accept="image/*"
+                      onChange={handleImageUpload}
+                      className="w-full bg-[#f9f9fb] rounded-md h-12 pt-2.5 px-3 cursor-pointer text-sm focus:outline-none"
+                    />
+                  </div>
+                </div>
+                <DialogFooter>
+                  <Button variant="outline" onClick={() => setIsDialogOpen(false)} className="h-12 rounded-xl">{t('cancel')}</Button>
+                  <Button onClick={handleSaveProfile} className="h-12 bg-[#141b2d] hover:bg-[#1f2945] rounded-xl px-8">{t('save_changes')}</Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
           </div>
         </header>
 

@@ -62,9 +62,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       if (user) {
         const defaultName = user.email?.split('@')[0] || "User";
         
-        const storedName = localStorage.getItem("userName");
-        const storedPic = localStorage.getItem("profilePic");
-        const storedRole = localStorage.getItem("userRole");
+        const meta = user.user_metadata;
+        const storedName = meta.full_name || localStorage.getItem("userName");
+        const storedPic = meta.avatar_url || localStorage.getItem("profilePic");
+        const storedRole = meta.role || localStorage.getItem("userRole");
         
         setUserName(storedName || defaultName);
         setEditName(storedName || defaultName);
@@ -115,19 +116,34 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     }
   };
 
-  const handleSaveProfile = () => {
+  const handleSaveProfile = async () => {
     setUserName(editName);
     setUserRole(editRole);
     setProfilePic(editPic);
     
+    // Save to LocalStorage for instant fallback
     if (typeof window !== "undefined") {
        localStorage.setItem("userName", editName);
        localStorage.setItem("userRole", editRole);
        localStorage.setItem("profilePic", editPic);
     }
-    
-    setIsDialogOpen(false);
-    toast.success(lang === 'en' ? "Profile changed successfully! ✅" : "Xogta si guul leh baa loo badalay! ✅");
+
+    // Persist to Supabase Auth Metadata
+    const supabase = createClient();
+    const { error } = await supabase.auth.updateUser({
+      data: { 
+        full_name: editName,
+        role: editRole,
+        avatar_url: editPic
+      }
+    });
+
+    if (error) {
+      toast.error(lang === 'en' ? "Error saving to cloud" : "Khalad baa ka dhacay kaydinta daruuraha");
+    } else {
+      setIsDialogOpen(false);
+      toast.success(lang === 'en' ? "Profile changed successfully! ✅" : "Xogta si guul leh baa loo badalay! ✅");
+    }
   };
 
   const toggleLang = () => {
