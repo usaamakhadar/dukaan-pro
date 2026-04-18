@@ -41,6 +41,43 @@ export default function InventoryPage() {
   const [formData, setFormData] = useState({ id: '', sku: '', name: '', price: '', stock: '', image_url: '' });
   const [searchQuery, setSearchQuery] = useState("");
 
+  // Handler for product image upload (with compression)
+  const handleProductImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      if (file.size > 2 * 1024 * 1024) {
+        toast.error(lang === 'en' ? "Image too large! Max 2MB." : "Sawirka waa uu weyn yahay! Max 2MB.");
+        return;
+      }
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        const img = new (window as any).Image();
+        img.src = reader.result;
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          const MAX_WIDTH = 400; // Slightly larger for products
+          const MAX_HEIGHT = 400;
+          let width = img.width;
+          let height = img.height;
+
+          if (width > height) {
+            if (width > MAX_WIDTH) { height *= MAX_WIDTH / width; width = MAX_WIDTH; }
+          } else {
+            if (height > MAX_HEIGHT) { width *= MAX_HEIGHT / height; height = MAX_HEIGHT; }
+          }
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext('2d');
+          ctx?.drawImage(img, 0, 0, width, height);
+          const dataUrl = canvas.toDataURL('image/jpeg', 0.8);
+          setFormData(prev => ({ ...prev, image_url: dataUrl }));
+          toast.success(lang === 'en' ? "Image uploaded & optimized!" : "Sawirka waa la habeeyay!");
+        };
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
   const getStatus = (stock: number) => {
     if (stock === 0) return "Out of Stock";
     if (stock < 10) return "Low Stock";
@@ -293,8 +330,9 @@ export default function InventoryPage() {
           </div>
       </div>
 
-      <div className="border border-zinc-100 rounded-3xl overflow-hidden bg-white shadow-[0_2px_20px_-5px_rgba(0,0,0,0.05)]">
-        <Table>
+      <div className="border border-zinc-100 rounded-3xl overflow-hidden bg-white shadow-[0_2px_20px_-5px_rgba(0,0,0,0.05)] w-full overflow-x-auto custom-scrollbar">
+        <div className="min-w-[800px] lg:min-w-full">
+          <Table>
           <TableHeader>
             <TableRow className="border-b border-zinc-100 bg-[#f9f9fb] hover:bg-[#f9f9fb]">
               <TableHead className="text-zinc-400 font-extrabold uppercase text-[10px] tracking-widest px-6 py-4">{t('sku')}</TableHead>
@@ -365,6 +403,7 @@ export default function InventoryPage() {
             ))}
           </TableBody>
         </Table>
+       </div>
       </div>
 
       {/* --- ADD PRODUCT DIALOG --- */}
@@ -438,7 +477,7 @@ export default function InventoryPage() {
             </div>
             <div className="grid gap-2">
               <label className="text-sm font-bold text-zinc-600 flex justify-between items-center">
-                <span>Image URL (Optional)</span>
+                <span>{lang === 'en' ? 'Product Image' : 'Sawirka Badeecada'}</span>
                 <Button 
                   type="button" 
                   variant="ghost" 
@@ -446,38 +485,39 @@ export default function InventoryPage() {
                   className="h-6 px-2 text-blue-600 hover:bg-blue-50"
                   onClick={() => {
                     if (!formData.name) {
-                      toast.error(lang === 'en' ? "Enter product name first!" : "Magaca badeecada horta qor!");
+                      toast.error(lang === 'en' ? "Enter name first!" : "Magaca horta qor!");
                       return;
                     }
-                    const url = `https://images.unsplash.com/photo-1523275335684-37898b6baf30?auto=format&fit=crop&q=80&w=400&q=80`; // Default watch
-                    // Simple logic for keywords
-                    const keywords: {[key: string]: string} = {
-                      'jacket': 'https://images.unsplash.com/photo-1551028719-00167b16eac5?auto=format&fit=crop&q=80&w=400',
-                      'shirt': 'https://images.unsplash.com/photo-1521572267360-ee0c2909d518?auto=format&fit=crop&q=80&w=400',
-                      'shoe': 'https://images.unsplash.com/photo-1542291026-7eec264c27ff?auto=format&fit=crop&q=80&w=400',
-                      'bag': 'https://images.unsplash.com/photo-1548036328-c9fa89d128fa?auto=format&fit=crop&q=80&w=400',
-                      'watch': 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?auto=format&fit=crop&q=80&w=400',
-                      'laptop': 'https://images.unsplash.com/photo-1496181133206-80ce9b88a853?auto=format&fit=crop&q=80&w=400',
-                      'phone': 'https://images.unsplash.com/photo-1511706853293-961f0d38f352?auto=format&fit=crop&q=80&w=400'
-                    };
                     const lowerName = formData.name.toLowerCase();
-                    const foundKey = Object.keys(keywords).find(k => lowerName.includes(k));
-                    const finalUrl = foundKey ? keywords[foundKey] : `https://loremflickr.com/400/400/${encodeURIComponent(lowerName)}`;
-                    
+                    const finalUrl = `https://loremflickr.com/400/400/${encodeURIComponent(lowerName)}`;
                     setFormData({...formData, image_url: finalUrl});
-                    toast.success(lang === 'en' ? "Image generated!" : "Sawir baa loo helay!");
+                    toast.success(lang === 'en' ? "Generated!" : "Waa la diyaariyay!");
                   }}
                 >
                   <Wand2 className="h-3.5 w-3.5 mr-1" />
-                  Auto-Find Image
+                  Auto-Find
                 </Button>
               </label>
-              <Input 
-                 placeholder="https://example.com/image.jpg"
-                 className="bg-[#f9f9fb] h-11 border-zinc-200 text-[#141b2d]"
-                 value={formData.image_url}
-                 onChange={(e) => setFormData({...formData, image_url: e.target.value})}
-              />
+              
+              <div className="flex gap-2">
+                <div className="flex-1">
+                  <Input 
+                    placeholder="URL or Upload -->"
+                    className="bg-[#f9f9fb] h-11 border-zinc-200 text-[#141b2d]"
+                    value={formData.image_url}
+                    onChange={(e) => setFormData({...formData, image_url: e.target.value})}
+                  />
+                </div>
+                <div className="w-12 h-11 relative bg-[#141b2d] rounded-xl flex items-center justify-center cursor-pointer hover:bg-blue-600 transition-colors">
+                  <Camera className="text-white h-5 w-5" />
+                  <input 
+                    type="file" 
+                    accept="image/*" 
+                    onChange={handleProductImageUpload}
+                    className="absolute inset-0 opacity-0 cursor-pointer" 
+                  />
+                </div>
+              </div>
             </div>
           </div>
           <DialogFooter>
@@ -553,7 +593,7 @@ export default function InventoryPage() {
             </div>
             <div className="grid gap-2">
               <label className="text-sm font-bold text-zinc-600 flex justify-between items-center">
-                <span>Image URL (Optional)</span>
+                <span>{lang === 'en' ? 'Product Image' : 'Sawirka Badeecada'}</span>
                 <Button 
                   type="button" 
                   variant="ghost" 
@@ -570,12 +610,25 @@ export default function InventoryPage() {
                   Auto-Find
                 </Button>
               </label>
-              <Input 
-                 placeholder="https://example.com/image.jpg"
-                 className="bg-[#f9f9fb] h-11 border-zinc-200 text-[#141b2d]"
-                 value={formData.image_url}
-                 onChange={(e) => setFormData({...formData, image_url: e.target.value})}
-              />
+              <div className="flex gap-2">
+                <div className="flex-1">
+                  <Input 
+                    placeholder="URL or Upload -->"
+                    className="bg-[#f9f9fb] h-11 border-zinc-200 text-[#141b2d]"
+                    value={formData.image_url}
+                    onChange={(e) => setFormData({...formData, image_url: e.target.value})}
+                  />
+                </div>
+                <div className="w-12 h-11 relative bg-[#141b2d] rounded-xl flex items-center justify-center cursor-pointer hover:bg-blue-600 transition-colors">
+                  <Camera className="text-white h-5 w-5" />
+                  <input 
+                    type="file" 
+                    accept="image/*" 
+                    onChange={handleProductImageUpload}
+                    className="absolute inset-0 opacity-0 cursor-pointer" 
+                  />
+                </div>
+              </div>
             </div>
           </div>
           <DialogFooter>
