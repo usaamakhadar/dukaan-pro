@@ -5,7 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { 
   Search, Bell, HelpCircle, LayoutDashboard, ShoppingBag, 
-  Receipt, Users, Settings, PackageOpen, X, Check, Eye, Globe, Wallet
+  Receipt, Users, Settings, PackageOpen, X, Check, Eye, Globe, Wallet, LogOut
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";

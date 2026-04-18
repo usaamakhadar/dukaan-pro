@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { 
   Search, Bell, HelpCircle, LayoutDashboard, ShoppingBag, 
-  Receipt, Users, Settings, Plus, Minus, Trash2, Globe, PackageOpen, X, Wallet, Camera, Menu, ShoppingCart, Check
+  Receipt, Users, Settings, Plus, Minus, Trash2, Globe, PackageOpen, X, Wallet, Camera, Menu, ShoppingCart, Check, LogOut
 } from "lucide-react";
 import {
   Sheet,
