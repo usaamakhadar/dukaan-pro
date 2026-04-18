@@ -6,6 +6,7 @@ import type { Metadata } from "next";
 const inter = Inter({ subsets: ["latin"] });
 
 import { LanguageProvider } from "@/lib/i18n";
+import AIAssistant from "@/components/AIAssistant";
 
 export const metadata: Metadata = {
   title: "Dukaan Pro | Premium Retail",
@@ -37,6 +38,7 @@ export default function RootLayout({
         <LanguageProvider>
           {children}
           <Toaster />
+          <AIAssistant />
           <script
             dangerouslySetInnerHTML={{
               __html: `
