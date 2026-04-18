@@ -70,9 +70,17 @@ export default function AIAssistant() {
   const generateAIResponse = (query: string, language: string): string => {
     const q = query.toLowerCase();
     
-    // Automatic Language Detection (Basic)
-    const somaliKeywords = ['ma', 'waa', 'sidee', 'ka', 'ku', 'iyo', 'yahay', 'tahay', 'jira', 'ilaa', 'ila', 'hagaaji', 'qabo', 'taqaan', 'hadashaa', 'bilaa', 'cusubahay'];
-    const isSomaliQuery = somaliKeywords.some(word => q.includes(' ' + word + ' ') || q.startsWith(word + ' ') || q.endsWith(' ' + word) || q === word);
+    // Automatic Language Detection (Advanced)
+    const somaliKeywords = [
+      'ma', 'waa', 'sidee', 'ka', 'ku', 'iyo', 'yahay', 'tahay', 'jira', 'ilaa', 'ila', 'hagaaji', 'qabo', 'taqaan', 
+      'hadashaa', 'bilaa', 'cusubahay', 'cilad', 'dhib', 'sawir', 'iib', 'lacag', 'macmiil', 'wax', 'qof', 'hag', 
+      'iga', 'ilaa', 'halkan', 'soo', 'bixi', 'dhacay', 'tirtir', 'badal', 'cusboonaysii', 'haysataa', 'dhammaan',
+      'dhex', 'leeyahay', 'aan', 'ee'
+    ];
+    
+    // Check if any word in the query matches the Somali dictionary for better accuracy
+    const queryWords = q.split(/\s+/);
+    const isSomaliQuery = queryWords.some(word => somaliKeywords.includes(word)) || q.includes('ma taqaan') || q.includes('iga haysataa');
     
     // If user asks if it knows Somali directly
     if (q.includes('somali') || q.includes('soomaali') || q.includes('af somali')) {
@@ -80,20 +88,23 @@ export default function AIAssistant() {
     }
 
     if (language === 'so' || isSomaliQuery) {
-      if (q.includes('sawir') || q.includes('image') || q.includes('img')) {
-        return "Si aad sawir ugu darto badeecada, tag Inventory, riix 'Add Product' ama 'Edit', kadibna riix calaamada kamarada (camera icon). Waxaan hadda ku daray 'Image Compressor' si sawiradu uusan error u bixin.";
+      if (q.includes('sawir') || q.includes('image') || q.includes('img') || q.includes('photo')) {
+        return "Si aad sawir ugu darto badeecada, tag 'Inventory', riix 'Add Product' ama 'Edit', kadibna riix calaamada kamarada (camera icon). Waxaan hadda ku daray 'Image Compressor' si sawiradu uusan error u bixin. Ma u baahantahay inaan ku tuso meesha ay ku taal?";
       }
-      if (q.includes('dhib') || q.includes('error') || q.includes('cilad')) {
-        return "Haddii aad cilad aragto, fadlan hubi internet-kaaga ama isku day inaad 'Refresh' gareeyo bogga. Sidoo kale, xogta profile-ka hadda waxay ku kaydsan tahay Supabase Cloud markaa ma lumayso.";
+      if (q.includes('dhib') || q.includes('error') || q.includes('cilad') || q.includes('haysataa')) {
+        return "Waan ka xumahay in cilad ku haysato sxb. Haddii ay tahay dhinaca sawirka ama xogta luminaysa, hadda waan xalinnay; wax walba waxay ku kaydsan yihiin Supabase. Haddii cilad kale jirto, Refresh gareeyo bogga ama iisheeg waxa ay tahay.";
       }
       if (q.includes('iib') || q.includes('pos')) {
-        return "Bogga POS-ka waxaa loogu talagalay iibka degdega ah. Waxaad isticmaali kartaa 'Barcode Scanner' ama kamarada taleefankaaga si aad badeecada u aqoonsato.";
+        return "Bogga POS-ka waxaa loogu talagalay iibka degdega ah. Waxaad isticmaali kartaa 'Barcode Scanner' ama kamarada taleefankaaga si aad badeecada u aqoonsato. Sidoo kale, iibka deynta (credit) hadda waa suurtagal.";
       }
       if (q.includes('magac') || q.includes('profile')) {
-        return "Si aad u badasho magacaaga ama sawirkaaga, riix profile-kaaga geeska sare (Dashboard ama POS), kadibna dooro 'Edit Profile'.";
+        return "Si aad u badasho magacaaga ama sawirkaaga, riix profile-kaaga geeska sare (Dashboard ama POS), kadibna dooro 'Edit Profile'. Xogtaas hadda si toos ah ayay u kaydsan tahay.";
       }
       if (q.includes('bilaa') || q.includes('cusub')) {
         return "Ku soo dhawaaw sxb! Si aad u bilaawdo, marka hore tag 'Inventory' si aad badeeco ugu darto. Kadib tag 'POS' si aad u iibiso. Haddii aad u baahato caawinaad kale meeshan iigu soo qor.";
+      }
+      if (q.includes('introduce') || q.includes('waa maxay') || q.includes('sharax')) {
+        return "Dukaan Pro waa nidaam casri ah oo loogu talagalay maamulka dukaamada (POS & Inventory). Waxay kuu sahlaysaa iibka, daba-galka kaydka, iyo maamulka macaamiisha. Sideen kuu caawiyaa?";
       }
       return "Waan ku maqlayaa sxb. Dukaan Pro AI ahaan, waxaan halkan u joogaa inaan dukaankaaga kaa caawiyo. Ma rabtaa inaan kaa caawiyo Inventory-ga, Sales-ka, mise Profile-ka?";
     } else {
@@ -103,6 +114,9 @@ export default function AIAssistant() {
       }
       if (q.includes('error') || q.includes('issue')) {
         return "Most common errors are now handled by our smart compression. If you see a persistence issue, rest assured profile data is now synced with Supabase Cloud.";
+      }
+      if (q.includes('introduce') || q.includes('what is this')) {
+        return "Dukaan Pro is a premium POS & Inventory management system. I am your AI assistant here to help you manage sales and stock. How can I help?";
       }
       return "I'm here to help! I can assist with inventory management, POS usage, or setting up your store profile. What's on your mind?";
     }
