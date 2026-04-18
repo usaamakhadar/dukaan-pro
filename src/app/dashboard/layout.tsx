@@ -89,7 +89,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         }
       } else {
         // Redirect if not logged in
-        window.location.href = '/login';
+        window.location.replace('/login');
       }
     };
     fetchProfile();

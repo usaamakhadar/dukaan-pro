@@ -126,7 +126,7 @@ export default function POSPage() {
         fetchCustomers();
       }
     } else {
-        window.location.href = '/login';
+        window.location.replace('/login');
     }
   };
 

@@ -2,7 +2,7 @@
   "name": "Dukaan Pro POS",
   "short_name": "Dukaan Pro",
   "description": "Premium Retail Management & POS System",
-  "start_url": "/dashboard",
+  "start_url": "/",
   "display": "standalone",
   "background_color": "#ffffff",
   "theme_color": "#0b132b",
