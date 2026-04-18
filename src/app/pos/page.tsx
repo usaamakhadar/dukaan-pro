@@ -84,6 +84,7 @@ export default function POSPage() {
   const fetchSession = async () => {
     const { data: { user } } = await supabase.auth.getUser();
     if (user) {
+      const defaultName = user.email?.split('@')[0] || "User";
       const meta = user.user_metadata;
       const storedName = meta.full_name || localStorage.getItem("userName");
       const storedPic = meta.avatar_url || localStorage.getItem("profilePic");
