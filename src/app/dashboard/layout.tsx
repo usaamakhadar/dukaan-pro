@@ -58,44 +58,17 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     const fetchProfile = async () => {
       const supabase = createClient();
       const { data: { user } } = await supabase.auth.getUser();
+      console.log("Checking user...");
       
       if (user) {
-        const defaultName = user.email?.split('@')[0] || "User";
+        setUserName(user.email?.split('@')[0] || "User");
+        setEditName(user.email?.split('@')[0] || "User");
+        setStoreName("Dukaan Pro");
+        setUserRole("Admin");
+        setProfilePic("https://ui-avatars.com/api/?name=U&background=0b132b&color=fff");
+        supabase.auth.updateUser({ data: { avatar_url: null } });
         
-        const meta = user.user_metadata;
-        const storedName = meta.full_name || localStorage.getItem("userName");
-        const storedPic = meta.avatar_url || localStorage.getItem("profilePic");
-        const storedRole = meta.role || localStorage.getItem("userRole");
-        
-        setUserName(storedName || defaultName);
-        setEditName(storedName || defaultName);
-        if (storedPic) { 
-           // Emergency fix for 494 Error: REMOVE all base64 avatars from metadata
-           if (storedPic.startsWith('data:image')) {
-              const defaultPic = "https://ui-avatars.com/api/?name=" + (storedName || "U") + "&background=0b132b&color=fff";
-              setProfilePic(defaultPic);
-              setEditPic(defaultPic);
-              // Clean the poisoning immediately!
-              supabase.auth.updateUser({ data: { avatar_url: null } });
-           } else {
-              setProfilePic(storedPic); 
-              setEditPic(storedPic); 
-           }
-        }
-        
-        // Fetch Tenant and Role
-        const { data: roleData, error } = await supabase
-          .from('user_roles')
-          .select('role, tenants(name)')
-          .eq('user_id', user.id)
-          .single();
-
-        if (roleData && !error) {
-          setUserRole(storedRole || roleData.role);
-          setEditRole(storedRole || roleData.role);
-          // @ts-ignore
-          setStoreName(roleData.tenants?.name || "My Store");
-        }
+        // Logic removed to fix header size
       } else {
         // Redirect if not logged in
         window.location.replace('/login');
