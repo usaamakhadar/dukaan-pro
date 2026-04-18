@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { 
   Search, Bell, HelpCircle, LayoutDashboard, ShoppingBag, 
   Receipt, Users, Settings, Plus, Minus, Trash2, Globe, PackageOpen, X, Wallet, Camera, Menu, ShoppingCart, Check
@@ -587,7 +588,7 @@ export default function POSPage() {
                     <label className="text-sm font-bold text-[#141b2d]">{t('new_name')}</label>
                     <Input 
                       value={editName}
-                      onChange={(e) => setEditName(e.target.value)}
+                      onChange={(e: React.ChangeEvent<HTMLInputElement>) => setEditName(e.target.value)}
                       className="bg-[#f9f9fb] h-12"
                     />
                   </div>
@@ -595,7 +596,7 @@ export default function POSPage() {
                     <label className="text-sm font-bold text-[#141b2d]">{t('role')}</label>
                     <Input 
                       value={editRole}
-                      onChange={(e) => setEditRole(e.target.value)}
+                      onChange={(e: React.ChangeEvent<HTMLInputElement>) => setEditRole(e.target.value)}
                       className="bg-[#f9f9fb] h-12"
                     />
                   </div>
