@@ -40,30 +40,28 @@ export default function LoginPage() {
         // Fix for 494 Requests: If the user's DB still holds a massive base64 image, clear it NOW
         // before routing, otherwise the next page load will have a massive cookie and crash.
         if (data?.user?.user_metadata?.avatar_url && data.user.user_metadata.avatar_url.length > 500) {
+           // 1. Tirtir sawirka weyn (Clear massive metadata)
            await supabase.auth.updateUser({
-              data: { avatar_url: null }
+              data: { avatar_url: null, profile_image: null, avatar: null }
            });
            
            if (typeof window !== 'undefined') {
               localStorage.removeItem('profilePic');
-              
-              // Only remove surplus cookie chunks (2 and above) that cause the 494 error.
-              // Leave .0 and .1 intact so the session stays valid for the dashboard!
-              const cookies = document.cookie.split(";");
-              for (let i = 0; i < cookies.length; i++) {
-                 const cookie = cookies[i];
-                 const eqPos = cookie.indexOf("=");
-                 const name = eqPos > -1 ? cookie.substring(0, eqPos).trim() : cookie.trim();
-                 
-                 if (name.startsWith("sb-") && name.includes("-auth-token.")) {
-                    const parts = name.split(".");
-                    const chunkIndex = parseInt(parts[parts.length - 1]);
-                    if (!isNaN(chunkIndex) && chunkIndex >= 2) {
-                       document.cookie = name + "=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/";
-                       document.cookie = name + "=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/;domain=" + window.location.hostname;
-                    }
-                 }
-              }
+           }
+           
+           // 2. Sign Out si Supabase SDK iyada lafteedu u xaaqdo dhammaan cookies-ka u jajabnaa (.0, .1, .2, .3 iwm)
+           await supabase.auth.signOut();
+           
+           // 3. Dib u Sign In dheh si uu u helo Cookies cusub oo nadiif ah oo aad u yar (kaliya .0 iyo .1)
+           const { error: reAuthErr } = await supabase.auth.signInWithPassword({
+              email,
+              password,
+           });
+           
+           if (reAuthErr) {
+              setError(t('login_error'));
+              setLoading(false);
+              return;
            }
         }
         
