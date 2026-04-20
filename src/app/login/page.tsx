@@ -59,7 +59,7 @@ export default function LoginPage() {
            // Si rasmi ah uga tirtir Supabase DB
            await supabase.auth.updateUser({ data: cleanData });
            
-           // Natively wipe dhammaan cookies-ka u jajabay 100% si sax ah
+           // Natively wipe dhammaan cookies-ka SDK-da
            await supabase.auth.signOut();
            
            // Dib usoo celi session cusub oo aad ufudud (Keliya .0 / .1)
@@ -73,10 +73,41 @@ export default function LoginPage() {
               setLoading(false);
               return;
            }
+        }
+
+        // **UNCONDITIONAL GHOST COOKIE ANNIHILATOR**
+        // Xitaa haddii account-kaagu nadiif yahay, laga yaabee maalmo ka hor inuu ku dhegay Cookie weyn!
+        // Supabase SDK ma garato inay tirtirto cookies hore (sida .2, .3, .4) haddii token-ka cusub uu ka yaraado.
+        if (typeof window !== 'undefined') {
+           const cookies = document.cookie.split(';');
+           const domains = [
+               window.location.hostname,
+               '.' + window.location.hostname,
+               window.location.hostname.replace('www.', ''),
+               '.' + window.location.hostname.replace('www.', ''),
+               ''
+           ];
            
-           if (typeof window !== 'undefined') {
-              localStorage.removeItem('profilePic');
+           for (let i = 0; i < cookies.length; i++) {
+               const cookie = cookies[i];
+               const eqPos = cookie.indexOf("=");
+               const name = eqPos > -1 ? cookie.substring(0, eqPos).trim() : cookie.trim();
+               
+               if (name.startsWith('sb-') && name.includes('-auth-token.')) {
+                   const parts = name.split('.');
+                   const chunkIndex = parseInt(parts[parts.length - 1]);
+                   
+                   // Si arxan-darro ah ulaay Qayb kasta oo ku beegan 2 iyo wixii ka sareeya
+                   if (!isNaN(chunkIndex) && chunkIndex >= 2) {
+                       domains.forEach(domain => {
+                           const str = domain ? `;domain=${domain}` : '';
+                           document.cookie = `${name}=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/${str}`;
+                           document.cookie = `${name}=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/dashboard${str}`;
+                       });
+                   }
+               }
            }
+           localStorage.removeItem('profilePic');
         }
 
         router.push('/dashboard');
