@@ -37,45 +37,48 @@ export default function LoginPage() {
         setError(error.message);
         setLoading(false);
       } else {
-        // Fix for 494 Requests: If the user's DB still holds a massive base64 image, clear it NOW
-        // before routing, otherwise the next page load will have a massive cookie and crash.
-        // ANTI-494 BRUTE FORCE COOKIE ANNIHILATOR (The nuclear option)
-        if (typeof window !== 'undefined') {
-           const cookies = document.cookie.split(';');
-           const domains = [
-               window.location.hostname,
-               '.' + window.location.hostname,
-               window.location.hostname.replace('www.', ''),
-               '.' + window.location.hostname.replace('www.', ''),
-               '' // no domain
-           ];
-           
-           for (let i = 0; i < cookies.length; i++) {
-               const cookie = cookies[i];
-               const eqPos = cookie.indexOf("=");
-               const name = eqPos > -1 ? cookie.substring(0, eqPos).trim() : cookie.trim();
-               
-               if (name.startsWith('sb-') && name.includes('-auth-token.')) {
-                   const parts = name.split('.');
-                   const chunkIndex = parseInt(parts[parts.length - 1]);
-                   
-                   // DELETE ANY CHUNK >= 2 (these are remnants of the massive avatar)
-                   if (!isNaN(chunkIndex) && chunkIndex >= 2) {
-                       domains.forEach(domain => {
-                           const domainStr = domain ? `;domain=${domain}` : '';
-                           document.cookie = `${name}=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/${domainStr}`;
-                           document.cookie = `${name}=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/dashboard${domainStr}`;
-                       });
-                   }
-               }
+        // 1. Anti-494 Dynamic Metadata Cleanser
+        const meta = data?.user?.user_metadata || {};
+        let needsCleanup = false;
+        const cleanData: Record<string, any> = {};
+        
+        if (meta.avatar_url && meta.avatar_url.length > 500) {
+           cleanData['avatar_url'] = '';
+           needsCleanup = true;
+        }
+
+        // Si qoto dheer u baadh (Deep scan) keys kale oo qarinaya xog weyn
+        for (const key in meta) {
+           if (typeof meta[key] === 'string' && meta[key].length > 500) {
+              cleanData[key] = ''; 
+              needsCleanup = true;
            }
         }
         
-        // Ensure standard metadata is cleaned gently if possible
-        if (data?.user?.user_metadata?.avatar_url) {
-           supabase.auth.updateUser({ data: { avatar_url: null, profile_image: null, avatar: null } });
+        if (needsCleanup) {
+           // Si rasmi ah uga tirtir Supabase DB
+           await supabase.auth.updateUser({ data: cleanData });
+           
+           // Natively wipe dhammaan cookies-ka u jajabay 100% si sax ah
+           await supabase.auth.signOut();
+           
+           // Dib usoo celi session cusub oo aad ufudud (Keliya .0 / .1)
+           const { error: reAuthErr } = await supabase.auth.signInWithPassword({
+              email,
+              password,
+           });
+           
+           if (reAuthErr) {
+              setError(t('login_error'));
+              setLoading(false);
+              return;
+           }
+           
+           if (typeof window !== 'undefined') {
+              localStorage.removeItem('profilePic');
+           }
         }
-        
+
         router.push('/dashboard');
       }
     } catch (err: any) {
