@@ -59,8 +59,13 @@ export default function LoginPage() {
               }
            }
            
-           // Dib u soo deji session cusub oo nadiif ah (small JWT)
-           await supabase.auth.refreshSession();
+           // Dib usamee session-ka adigoo isticmaalaya tokens-kii aan kasoo helnay login-ka 
+           if (data.session) {
+              await supabase.auth.setSession({
+                 access_token: data.session.access_token,
+                 refresh_token: data.session.refresh_token
+              });
+           }
         }
         
         router.push('/dashboard');
