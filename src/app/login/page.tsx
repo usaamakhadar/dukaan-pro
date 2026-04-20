@@ -43,10 +43,24 @@ export default function LoginPage() {
            await supabase.auth.updateUser({
               data: { avatar_url: null }
            });
-           // Explicitly clear from local storage
+           
+           // Dhab ahaan u tirtir dhammaan cookies-kii hore u jajabnaa (lingering fragmented cookies)
            if (typeof window !== 'undefined') {
               localStorage.removeItem('profilePic');
+              const cookies = document.cookie.split(";");
+              for (let i = 0; i < cookies.length; i++) {
+                 const cookie = cookies[i];
+                 const eqPos = cookie.indexOf("=");
+                 const name = eqPos > -1 ? cookie.substring(0, eqPos) : cookie;
+                 if (name.trim().startsWith("sb-")) {
+                    document.cookie = name + "=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/";
+                    document.cookie = name + "=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/;domain=" + window.location.hostname;
+                 }
+              }
            }
+           
+           // Dib u soo deji session cusub oo nadiif ah (small JWT)
+           await supabase.auth.refreshSession();
         }
         
         router.push('/dashboard');
