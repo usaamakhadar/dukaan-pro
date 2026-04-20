@@ -28,7 +28,7 @@ export default function LoginPage() {
     setError(null);
 
     try {
-      const { error } = await supabase.auth.signInWithPassword({
+      const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
@@ -37,6 +37,18 @@ export default function LoginPage() {
         setError(error.message);
         setLoading(false);
       } else {
+        // Fix for 494 Requests: If the user's DB still holds a massive base64 image, clear it NOW
+        // before routing, otherwise the next page load will have a massive cookie and crash.
+        if (data?.user?.user_metadata?.avatar_url && data.user.user_metadata.avatar_url.length > 500) {
+           await supabase.auth.updateUser({
+              data: { avatar_url: null }
+           });
+           // Explicitly clear from local storage
+           if (typeof window !== 'undefined') {
+              localStorage.removeItem('profilePic');
+           }
+        }
+        
         router.push('/dashboard');
       }
     } catch (err: any) {
