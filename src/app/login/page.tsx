@@ -44,27 +44,26 @@ export default function LoginPage() {
               data: { avatar_url: null }
            });
            
-           // Dhab ahaan u tirtir dhammaan cookies-kii hore u jajabnaa (lingering fragmented cookies)
            if (typeof window !== 'undefined') {
               localStorage.removeItem('profilePic');
+              
+              // Only remove surplus cookie chunks (2 and above) that cause the 494 error.
+              // Leave .0 and .1 intact so the session stays valid for the dashboard!
               const cookies = document.cookie.split(";");
               for (let i = 0; i < cookies.length; i++) {
                  const cookie = cookies[i];
                  const eqPos = cookie.indexOf("=");
-                 const name = eqPos > -1 ? cookie.substring(0, eqPos) : cookie;
-                 if (name.trim().startsWith("sb-")) {
-                    document.cookie = name + "=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/";
-                    document.cookie = name + "=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/;domain=" + window.location.hostname;
+                 const name = eqPos > -1 ? cookie.substring(0, eqPos).trim() : cookie.trim();
+                 
+                 if (name.startsWith("sb-") && name.includes("-auth-token.")) {
+                    const parts = name.split(".");
+                    const chunkIndex = parseInt(parts[parts.length - 1]);
+                    if (!isNaN(chunkIndex) && chunkIndex >= 2) {
+                       document.cookie = name + "=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/";
+                       document.cookie = name + "=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/;domain=" + window.location.hostname;
+                    }
                  }
               }
-           }
-           
-           // Dib usamee session-ka adigoo isticmaalaya tokens-kii aan kasoo helnay login-ka 
-           if (data.session) {
-              await supabase.auth.setSession({
-                 access_token: data.session.access_token,
-                 refresh_token: data.session.refresh_token
-              });
            }
         }
         
