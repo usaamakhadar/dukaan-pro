@@ -153,7 +153,7 @@ export default function POSPage() {
 
       // Extract unique categories dynamically
       const uniqueCats = new Set<string>();
-      products.forEach(p => {
+      products.forEach((p: any) => {
          if (p.categories?.name) uniqueCats.add(p.categories.name);
       });
       const dynamicCats = Array.from(uniqueCats).map(c => ({ id: c, label: c }));
