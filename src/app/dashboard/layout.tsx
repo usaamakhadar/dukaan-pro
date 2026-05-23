@@ -57,12 +57,21 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   useEffect(() => {
     const fetchProfile = async () => {
       const supabase = createClient();
-      const { data: { user } } = await supabase.auth.getUser();
-      console.log("Checking user...");
+      const { data: { user }, error: userError } = await supabase.auth.getUser();
+      console.log("Checking user...", user, userError);
       
-      if (user) {
-        setUserName(user.email?.split('@')[0] || "User");
-        setEditName(user.email?.split('@')[0] || "User");
+      let finalUser = user;
+      
+      // Fallback to getSession if getUser fails (e.g. network error)
+      if (!finalUser) {
+         const { data: { session } } = await supabase.auth.getSession();
+         console.log("Checking session fallback...", session);
+         finalUser = session?.user || null;
+      }
+
+      if (finalUser) {
+        setUserName(finalUser.email?.split('@')[0] || "User");
+        setEditName(finalUser.email?.split('@')[0] || "User");
         setStoreName("Dukaan Pro");
         setUserRole("Admin");
         setProfilePic("https://ui-avatars.com/api/?name=U&background=0b132b&color=fff");
@@ -70,8 +79,11 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         
         // Logic removed to fix header size
       } else {
-        // Redirect if not logged in
-        window.location.replace('/login');
+        console.error("Auth check failed, redirecting to login...");
+        // Delay slightly so we can see the console logs
+        setTimeout(() => {
+          window.location.replace('/login');
+        }, 1000);
       }
     };
     fetchProfile();

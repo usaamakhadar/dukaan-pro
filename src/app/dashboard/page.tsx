@@ -28,7 +28,11 @@ export default function DashboardOverview() {
 
   const fetchDashboardData = async () => {
     setIsLoading(true);
-    const { data: { user } } = await supabase.auth.getUser();
+    let { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      const { data: { session } } = await supabase.auth.getSession();
+      user = session?.user || null;
+    }
     if (!user) return;
 
     const { data: roleData } = await supabase
