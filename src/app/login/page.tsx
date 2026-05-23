@@ -75,40 +75,6 @@ export default function LoginPage() {
            }
         }
 
-        // **UNCONDITIONAL GHOST COOKIE ANNIHILATOR**
-        // Xitaa haddii account-kaagu nadiif yahay, laga yaabee maalmo ka hor inuu ku dhegay Cookie weyn!
-        // Supabase SDK ma garato inay tirtirto cookies hore (sida .2, .3, .4) haddii token-ka cusub uu ka yaraado.
-        if (typeof window !== 'undefined') {
-           const cookies = document.cookie.split(';');
-           const domains = [
-               window.location.hostname,
-               '.' + window.location.hostname,
-               window.location.hostname.replace('www.', ''),
-               '.' + window.location.hostname.replace('www.', ''),
-               ''
-           ];
-           
-           for (let i = 0; i < cookies.length; i++) {
-               const cookie = cookies[i];
-               const eqPos = cookie.indexOf("=");
-               const name = eqPos > -1 ? cookie.substring(0, eqPos).trim() : cookie.trim();
-               
-               if (name.startsWith('sb-') && name.includes('-auth-token.')) {
-                   const parts = name.split('.');
-                   const chunkIndex = parseInt(parts[parts.length - 1]);
-                   
-                   // Si arxan-darro ah ulaay Qayb kasta oo ku beegan 2 iyo wixii ka sareeya
-                   if (!isNaN(chunkIndex) && chunkIndex >= 2) {
-                       domains.forEach(domain => {
-                           const str = domain ? `;domain=${domain}` : '';
-                           document.cookie = `${name}=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/${str}`;
-                           document.cookie = `${name}=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/dashboard${str}`;
-                       });
-                   }
-               }
-           }
-           localStorage.removeItem('profilePic');
-        }
 
         router.push('/dashboard');
       }
