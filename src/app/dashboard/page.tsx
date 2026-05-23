@@ -44,14 +44,14 @@ export default function DashboardOverview() {
     if (roleData) {
       // 1. Revenue
       const { data: sales } = await supabase.from('sales').select('total_amount, created_at');
-      const totalRev = sales?.reduce((acc, curr) => acc + Number(curr.total_amount), 0) || 0;
+      const totalRev = sales?.reduce((acc: any, curr: any) => acc + Number(curr.total_amount), 0) || 0;
       
       const today = new Date().toISOString().split('T')[0];
-      const todayRev = sales?.filter(s => s.created_at.startsWith(today)).reduce((a, b) => a + Number(b.total_amount), 0) || 0;
+      const todayRev = sales?.filter((s: any) => s.created_at.startsWith(today)).reduce((a: any, b: any) => a + Number(b.total_amount), 0) || 0;
 
       // 2. Expenses
       const { data: expenses } = await supabase.from('expenses').select('amount, expense_date');
-      const totalExp = expenses?.reduce((acc, curr) => acc + Number(curr.amount), 0) || 0;
+      const totalExp = expenses?.reduce((acc: any, curr: any) => acc + Number(curr.amount), 0) || 0;
 
       // 3. Customers Count
       const { count: customersCount } = await supabase.from('customers').select('*', { count: 'exact', head: true });
@@ -77,12 +77,12 @@ export default function DashboardOverview() {
       const chartDataMap: Record<string, {sales: number, expenses: number}> = {};
       last7Days.forEach(date => chartDataMap[date] = { sales: 0, expenses: 0 });
 
-      sales?.forEach(s => {
+      sales?.forEach((s: any) => {
         const d = s.created_at.split('T')[0];
         if (chartDataMap[d]) chartDataMap[d].sales += Number(s.total_amount);
       });
 
-      expenses?.forEach(e => {
+      expenses?.forEach((e: any) => {
         const d = e.expense_date?.split('T')[0];
         if (d && chartDataMap[d]) chartDataMap[d].expenses += Number(e.amount);
       });
