@@ -124,7 +124,7 @@ export default function InventoryPage() {
         .order('created_at', { ascending: false });
         
       if (products) {
-        setInventory(products.map(p => ({
+        setInventory(products.map((p: any) => ({
           id: p.id,
           sku: p.sku || '',
           name: p.name,
