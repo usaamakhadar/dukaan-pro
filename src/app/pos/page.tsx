@@ -1035,8 +1035,14 @@ export default function POSPage() {
          <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 overflow-y-auto">
             <div className="bg-white text-[#141b2d] w-full max-w-[340px] shadow-2xl relative overflow-hidden font-mono text-[12px] border border-zinc-200 m-auto mx-auto my-12 flex flex-col max-h-[90vh]">
                {/* Success Banner (UI only) */}
-               <div className="bg-green-600 text-white text-center py-1 text-[10px] font-bold uppercase tracking-widest shrink-0">
-                  {lang === 'en' ? 'Transaction Success' : 'Iibka waa xarooday'}
+               <div className="bg-green-600 text-white text-center py-2 text-[10px] font-bold uppercase tracking-widest shrink-0 relative flex justify-center items-center">
+                  <span>{lang === 'en' ? 'Transaction Success' : 'Iibku waa xarooday'}</span>
+                  <button 
+                     onClick={() => setShowReceipt(false)} 
+                     className="absolute right-2 text-white hover:text-red-200 font-extrabold text-[10px] p-1 px-2.5 bg-black/25 rounded transition-colors"
+                  >
+                     ✕ {lang === 'en' ? 'Close' : 'Xidh'}
+                  </button>
                </div>
 
                <div id="receipt-print-area" className="p-5 overflow-y-auto custom-scrollbar bg-white">
@@ -1133,9 +1139,14 @@ export default function POSPage() {
                   <Button onClick={() => handleDownloadReceipt('pdf')} className="border-blue-200 bg-blue-50 text-blue-700 hover:bg-blue-100 font-bold rounded-lg h-10 shadow-sm text-xs">
                      📄 {lang === 'en' ? 'Save PDF' : 'Soo deji (PDF)'}
                   </Button>
-                  <Button variant="outline" onClick={() => setShowReceipt(false)} className="col-span-2 border-zinc-200 text-zinc-600 font-bold rounded-lg h-10 text-xs mt-2">
-                     Back to POS
+                  <Button variant="outline" onClick={() => setShowReceipt(false)} className="border-zinc-200 text-zinc-600 font-bold rounded-lg h-10 text-xs mt-1 w-full">
+                     ⬅️ {lang === 'en' ? 'Back to POS' : 'Ku noqo Iibka'}
                   </Button>
+                  <Link href="/dashboard" className="w-full">
+                     <Button className="w-full bg-[#0b132b] hover:bg-black text-white font-bold rounded-lg h-10 text-xs mt-1">
+                        📊 {lang === 'en' ? 'Dashboard' : 'Tag Dashboard'}
+                     </Button>
+                  </Link>
                </div>
             </div>
          </div>

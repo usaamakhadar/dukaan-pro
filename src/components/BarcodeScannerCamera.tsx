@@ -18,13 +18,10 @@ export default function BarcodeScannerCamera({ onScan, onClose, title = "Scan Ba
 
   useEffect(() => {
     const html5QrCode = new Html5Qrcode("html5-qr-reader", {
-      formatsToSupport: [
-        Html5QrcodeSupportedFormats.QR_CODE,
-        Html5QrcodeSupportedFormats.EAN_13,
-        Html5QrcodeSupportedFormats.CODE_128,
-        Html5QrcodeSupportedFormats.UPC_A,
-      ],
-      verbose: false
+      verbose: false,
+      experimentalFeatures: {
+        useBarCodeDetectorIfSupported: true
+      }
     });
     scannerRef.current = html5QrCode;
 
@@ -78,7 +75,16 @@ export default function BarcodeScannerCamera({ onScan, onClose, title = "Scan Ba
   const initStart = (cameraIdOrObj: any, instance: Html5Qrcode) => {
     instance.start(
       cameraIdOrObj,
-      { fps: 20, qrbox: { width: 250, height: 150 } },
+      { 
+        fps: 30, 
+        qrbox: (width, height) => {
+          // For barcode scanning, we want a wider box so the barcode fits easily.
+          const widthBox = Math.floor(width * 0.85);
+          const heightBox = Math.floor(height * 0.40);
+          return { width: widthBox, height: heightBox };
+        },
+        aspectRatio: 1.7777778
+      },
       (decodedText) => {
         instance.stop().then(() => {
             onScan(decodedText);
