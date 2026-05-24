@@ -27,14 +27,24 @@ type Customer = {
   spent: string;
 };
 
-const PrintPageStyles = ({ height }: { height: string }) => (
+const PrintPageStyles = () => (
   <style dangerouslySetInnerHTML={{ __html: `
     @media print {
       @page { 
         margin: 0;
-        size: 80mm ${height};
+        size: 80mm;
       }
-      body * { visibility: hidden; }
+      /* Hide Radix portals, dialog overlays, wrappers, and fixed layouts to prevent blank pages */
+      [data-radix-portal],
+      div[role="dialog"],
+      div[data-state],
+      .fixed,
+      .print\\:hidden {
+        display: none !important;
+      }
+      body * { 
+        visibility: hidden !important; 
+      }
       .print-target, .print-target * { 
          visibility: visible !important; 
       }
@@ -46,6 +56,7 @@ const PrintPageStyles = ({ height }: { height: string }) => (
          box-shadow: none !important; 
          border: none !important; 
          background: white !important;
+         display: flex !important;
       }
     }
   `}} />
@@ -61,7 +72,6 @@ export default function CustomersPage() {
   const [tenantSettings, setTenantSettings] = useState<any>(null);
   const [customers, setCustomers] = useState<Customer[]>([]);
   const statementRef = useRef<HTMLDivElement>(null);
-  const [statementHeight, setStatementHeight] = useState('auto');
   
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [formData, setFormData] = useState({ name: '', email: '', phone: '', address: '' });
@@ -248,10 +258,7 @@ export default function CustomersPage() {
   };
 
   const handlePrintStatement = () => {
-    if (statementRef.current) {
-        setStatementHeight(`${statementRef.current.offsetHeight + 10}px`);
-    }
-    setTimeout(() => window.print(), 100);
+    window.print();
   };
 
   const handleUSDChange = (val: string) => {
@@ -281,7 +288,7 @@ export default function CustomersPage() {
 
   return (
     <div className="space-y-6 max-w-6xl relative">
-      <PrintPageStyles height={statementHeight} />
+      <PrintPageStyles />
       
       {/* --- PROFESSIONAL PRINT VIEW (Statement) --- */}
       {selectedCustomer && (
@@ -475,7 +482,7 @@ export default function CustomersPage() {
 
       {/* --- CUSTOMER PROFILE & PAYMENT DIALOG --- */}
       <Dialog open={isProfileOpen} onOpenChange={setIsProfileOpen}>
-         <DialogContent className="sm:max-w-[500px] rounded-3xl bg-white border-zinc-200 p-0 overflow-hidden shadow-2xl">
+         <DialogContent className="w-[95vw] sm:max-w-[550px] md:max-w-[600px] rounded-3xl bg-white border-zinc-200 p-0 overflow-hidden shadow-2xl">
             {selectedCustomer && (
               <>
                 {/* Header Section */}
@@ -521,7 +528,7 @@ export default function CustomersPage() {
                             className="bg-[#f9f9fb] h-12 border-zinc-200 text-[#141b2d] font-bold rounded-xl"
                          />
                       </div>
-                      <div className="grid grid-cols-2 gap-4">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div className="grid gap-1.5">
                            <label className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest px-1">Taleefanka</label>
                            <Input 
