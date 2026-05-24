@@ -482,11 +482,11 @@ export default function CustomersPage() {
 
       {/* --- CUSTOMER PROFILE & PAYMENT DIALOG --- */}
       <Dialog open={isProfileOpen} onOpenChange={setIsProfileOpen}>
-         <DialogContent className="w-[95vw] sm:max-w-[550px] md:max-w-[600px] rounded-3xl bg-white border-zinc-200 p-0 overflow-hidden shadow-2xl">
+         <DialogContent className="w-[95vw] sm:max-w-[550px] md:max-w-[600px] max-h-[90vh] overflow-y-auto rounded-3xl bg-white border-zinc-200 p-0 shadow-2xl custom-scrollbar">
             {selectedCustomer && (
               <>
                 {/* Header Section */}
-                <div className="bg-[#141b2d] p-8 text-white print:hidden">
+                <div className="bg-[#141b2d] p-5 sm:p-8 text-white print:hidden">
                    <div className="flex justify-between items-start mb-6">
                       <div className="flex items-center space-x-4">
                          <div className="h-20 w-20 bg-white/10 rounded-3xl flex items-center justify-center text-white backdrop-blur-sm border border-white/10">
@@ -501,7 +501,7 @@ export default function CustomersPage() {
                          <Printer className="h-5 w-5"/>
                       </Button>
                    </div>
-
+ 
                    <div className="grid grid-cols-2 gap-4">
                       <div className="bg-white/10 rounded-2xl p-4 backdrop-blur-sm pointer-events-none">
                          <p className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest mb-1">Balance / Haraaga</p>
@@ -515,9 +515,9 @@ export default function CustomersPage() {
                       </div>
                    </div>
                 </div>
-
+ 
                 {/* Edit & Payment Section */}
-                <div className="p-8 space-y-6 print:hidden">
+                <div className="p-5 sm:p-8 space-y-4 sm:space-y-6 print:hidden">
                    {/* Fields */}
                    <div className="grid gap-4">
                       <div className="grid gap-1.5">
