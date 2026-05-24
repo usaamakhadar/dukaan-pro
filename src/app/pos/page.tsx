@@ -495,19 +495,54 @@ export default function POSPage() {
     <>
       <style>{`
         @media print {
-          body * { visibility: hidden; }
-          .print-target, .print-target * { visibility: visible; }
+          @page { 
+            margin: 0;
+            size: 80mm;
+          }
+          
+          /* Collapse height of all layout containers to prevent extra pages */
+          html, body, #__next, main, [data-radix-portal], .flex-1, .flex {
+            height: 0 !important;
+            min-height: 0 !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            overflow: visible !important;
+            background: white !important;
+          }
+          
+          /* Hide non-print elements */
+          div[role="dialog"],
+          div[data-state],
+          .fixed,
+          aside,
+          header,
+          .print-hidden,
+          .print\\:hidden {
+            display: none !important;
+          }
+          
+          body * { 
+            visibility: hidden !important; 
+          }
+          
+          .print-target, .print-target * { 
+            visibility: visible !important; 
+          }
+          
           .print-target { 
             position: absolute !important; 
             left: 0 !important; 
             top: 0 !important; 
-            margin: 0;
-            padding: 0;
-            background: white;
+            width: 80mm !important;
+            height: auto !important;
+            min-height: auto !important;
+            margin: 0 !important;
+            padding: 12px !important;
+            background: white !important;
             box-shadow: none !important;
             border: none !important;
+            display: block !important;
           }
-          @page { size: 80mm auto; margin: 0; }
         }
       `}</style>
       <div className="flex h-[100dvh] bg-white text-zinc-900 overflow-hidden font-sans w-full max-w-[100vw]">
@@ -1045,7 +1080,7 @@ export default function POSPage() {
                   </button>
                </div>
 
-               <div id="receipt-print-area" className="p-5 overflow-y-auto custom-scrollbar bg-white">
+                <div id="receipt-print-area" className="p-5 overflow-y-auto custom-scrollbar bg-white print-target">
                   {/* Thermal Header */}
                   <div className="text-center space-y-0.5 mb-4">
                      <p className="font-bold text-[10px] uppercase">Sales Receipt #{lastSaleData.id.slice(0, 8).toUpperCase()}</p>
@@ -1129,25 +1164,32 @@ export default function POSPage() {
                         </div>
                      </div>
                   </div>
-               </div>
+                </div>
 
-               {/* UI Buttons */}
-               <div className="p-4 bg-zinc-50 border-t border-zinc-100 grid grid-cols-2 gap-2 shrink-0">
-                  <Button onClick={() => handleDownloadReceipt('image')} className="bg-[#141b2d] hover:bg-black text-white font-bold rounded-lg h-10 shadow-sm text-xs">
-                     ⬇️ {lang === 'en' ? 'Save Image' : 'Soo deji (Sawir)'}
-                  </Button>
-                  <Button onClick={() => handleDownloadReceipt('pdf')} className="border-blue-200 bg-blue-50 text-blue-700 hover:bg-blue-100 font-bold rounded-lg h-10 shadow-sm text-xs">
-                     📄 {lang === 'en' ? 'Save PDF' : 'Soo deji (PDF)'}
-                  </Button>
-                  <Button variant="outline" onClick={() => setShowReceipt(false)} className="border-zinc-200 text-zinc-600 font-bold rounded-lg h-10 text-xs mt-1 w-full">
-                     ⬅️ {lang === 'en' ? 'Back to POS' : 'Ku noqo Iibka'}
-                  </Button>
-                  <Link href="/dashboard" className="w-full">
-                     <Button className="w-full bg-[#0b132b] hover:bg-black text-white font-bold rounded-lg h-10 text-xs mt-1">
-                        📊 {lang === 'en' ? 'Dashboard' : 'Tag Dashboard'}
-                     </Button>
-                  </Link>
-               </div>
+                {/* UI Buttons */}
+                <div className="p-4 bg-zinc-50 border-t border-zinc-100 flex flex-col gap-2 shrink-0">
+                   <Button onClick={() => window.print()} className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-lg h-11 shadow-sm text-sm">
+                      🖨️ {lang === 'en' ? 'Print Receipt' : 'Daabac Rasiidhka'}
+                   </Button>
+                   <div className="grid grid-cols-2 gap-2">
+                      <Button onClick={() => handleDownloadReceipt('image')} className="bg-[#141b2d] hover:bg-black text-white font-bold rounded-lg h-10 shadow-sm text-xs">
+                         ⬇️ {lang === 'en' ? 'Save Image' : 'Soo deji (Sawir)'}
+                      </Button>
+                      <Button onClick={() => handleDownloadReceipt('pdf')} className="border-blue-200 bg-blue-50 text-blue-700 hover:bg-blue-100 font-bold rounded-lg h-10 shadow-sm text-xs">
+                         📄 {lang === 'en' ? 'Save PDF' : 'Soo deji (PDF)'}
+                      </Button>
+                   </div>
+                   <div className="grid grid-cols-2 gap-2">
+                      <Button variant="outline" onClick={() => setShowReceipt(false)} className="border-zinc-200 text-zinc-600 font-bold rounded-lg h-10 text-xs w-full">
+                         ⬅️ {lang === 'en' ? 'Back to POS' : 'Ku noqo Iibka'}
+                      </Button>
+                      <Link href="/dashboard" className="w-full">
+                         <Button className="w-full bg-[#0b132b] hover:bg-black text-white font-bold rounded-lg h-10 text-xs">
+                            📊 {lang === 'en' ? 'Dashboard' : 'Tag Dashboard'}
+                         </Button>
+                      </Link>
+                   </div>
+                </div>
             </div>
          </div>
        )}

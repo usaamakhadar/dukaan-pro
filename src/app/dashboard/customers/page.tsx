@@ -292,7 +292,7 @@ export default function CustomersPage() {
       
       {/* --- PROFESSIONAL PRINT VIEW (Statement) --- */}
       {selectedCustomer && (
-        <div ref={statementRef} className="absolute top-[-9999px] left-[-9999px] print:static print:flex print-target w-[80mm] bg-white text-black p-4 text-[12px] leading-tight font-mono flex-col items-center justify-start">
+        <div ref={statementRef} className="absolute top-[-9999px] left-[-9999px] print-target w-[80mm] bg-white text-black p-4 text-[12px] leading-tight font-mono flex flex-col items-center justify-start">
           <div className="w-full max-w-[340px] bg-white">
              <div className="text-center mb-2">
                 <p className="text-[10px] font-bold uppercase tracking-widest">Debt Statement #{selectedCustomer.id.slice(0,6).toUpperCase()}</p>
