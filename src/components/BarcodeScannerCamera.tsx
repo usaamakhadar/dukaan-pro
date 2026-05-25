@@ -26,31 +26,20 @@ export default function BarcodeScannerCamera({ onScan, onClose, title = "Scan Ba
   const lastScanTimeRef = useRef<number>(0);
 
   const initStart = useCallback((cameraIdOrObj: string | MediaTrackConstraints, instance: Html5Qrcode) => {
-    // Construct camera constraints to force High Definition (720p/1080p)
+    // Construct camera constraints - keep it simple to support all laptops and phones
     const constraints = typeof cameraIdOrObj === 'string'
-      ? {
-          deviceId: { exact: cameraIdOrObj },
-          width: { min: 640, ideal: 1280, max: 1920 },
-          height: { min: 480, ideal: 720, max: 1080 }
-        }
-      : {
-          facingMode: "environment",
-          width: { min: 640, ideal: 1280, max: 1920 },
-          height: { min: 480, ideal: 720, max: 1080 }
-        };
+      ? { deviceId: { exact: cameraIdOrObj } }
+      : { facingMode: "environment" };
 
-    const tryStart = (c: string | MediaTrackConstraints, isFallback: boolean) => {
+    const tryStart = (c: string | MediaTrackConstraints) => {
       instance.start(
         c,
         { 
-          fps: 30, 
+          fps: 10, // 10 is more stable for barcode decoding on laptops
           qrbox: (width, height) => {
-            // For barcode scanning, we want a wider box so the barcode fits easily.
-            const widthBox = Math.floor(width * 0.85);
-            const heightBox = Math.floor(height * 0.40);
-            return { width: widthBox, height: heightBox };
-          },
-          aspectRatio: 1.7777778
+            const size = Math.min(width, height) * 0.7;
+            return { width: size, height: size }; // Square box is universally supported
+          }
         },
         (decodedText) => {
            const now = Date.now();
@@ -66,32 +55,23 @@ export default function BarcodeScannerCamera({ onScan, onClose, title = "Scan Ba
         },
         () => { /* ignore */ }
       ).catch(err => {
-          if (!isFallback) {
-             console.warn("HD constraints failed, falling back to basic constraints", err);
-             // Basic fallback constraints
-             const fallbackConstraints = typeof cameraIdOrObj === 'string'
-               ? { deviceId: { exact: cameraIdOrObj } }
-               : { facingMode: "environment" };
-             tryStart(fallbackConstraints, true);
-          } else {
-             const errorName = err instanceof Error ? err.name : String(err);
-             const errorMsg = err instanceof Error ? err.message : String(err);
-             
-             if (errorName === 'NotAllowedError' || errorName === 'PermissionDeniedError') {
-                setIsError("Fadlan u fasax Browserka (Allow Camera) inuu shido kamaradda.");
-             } else if (errorName === 'NotReadableError' || errorName === 'TrackStartError') {
-                setIsError("Kamaradu wey mashquulsan tahay (Busy). Waxaa laga yaabaa in tab kale ama app kale uu isticmaalayo.");
-             } else if (errorName === 'NotFoundError' || errorName === 'DevicesNotFoundError') {
-                setIsError("Wax kamarad ah oo shaqaynaya lama helin.");
-             } else {
-                setIsError(`Khalad ka dhacay shidista kamarada: ${errorMsg}`);
-             }
-             console.error("Initiation error:", err);
-          }
+         const errorName = err instanceof Error ? err.name : String(err);
+         const errorMsg = err instanceof Error ? err.message : String(err);
+         
+         if (errorName === 'NotAllowedError' || errorName === 'PermissionDeniedError') {
+            setIsError("Fadlan u fasax Browserka (Allow Camera) inuu shido kamaradda.");
+         } else if (errorName === 'NotReadableError' || errorName === 'TrackStartError') {
+            setIsError("Kamaradu wey mashquulsan tahay (Busy). Waxaa laga yaabaa in tab kale ama app kale uu isticmaalayo.");
+         } else if (errorName === 'NotFoundError' || errorName === 'DevicesNotFoundError') {
+            setIsError("Wax kamarad ah oo shaqaynaya lama helin.");
+         } else {
+            setIsError(`Khalad ka dhacay shidista kamarada: ${errorMsg}`);
+         }
+         console.error("Initiation error:", err);
       });
     };
 
-    tryStart(constraints, false);
+    tryStart(constraints);
   }, [onScan]);
 
   const startScannerWithId = useCallback((cameraIdOrObj: string | MediaTrackConstraints, instance: Html5Qrcode) => {
@@ -120,10 +100,7 @@ export default function BarcodeScannerCamera({ onScan, onClose, title = "Scan Ba
         Html5QrcodeSupportedFormats.CODE_128,
         Html5QrcodeSupportedFormats.CODE_39,
         Html5QrcodeSupportedFormats.QR_CODE
-      ],
-      experimentalFeatures: {
-        useBarCodeDetectorIfSupported: true
-      }
+      ]
     });
     scannerRef.current = html5QrCode;
 
@@ -132,7 +109,6 @@ export default function BarcodeScannerCamera({ onScan, onClose, title = "Scan Ba
         setCameras(devices);
         
         let bestIdx = 0;
-        // Search by label first
         for (let i = 0; i < devices.length; i++) {
            const lbl = devices[i].label.toLowerCase();
            if (lbl.includes("back") || lbl.includes("rear") || lbl.includes("environment")) {
@@ -141,7 +117,6 @@ export default function BarcodeScannerCamera({ onScan, onClose, title = "Scan Ba
            }
         }
         
-        // If still 0 (front) but there are multiple cameras, often iOS puts back last
         if (bestIdx === 0 && devices.length > 1) {
            bestIdx = devices.length - 1; 
         }
@@ -153,7 +128,6 @@ export default function BarcodeScannerCamera({ onScan, onClose, title = "Scan Ba
       }
     }).catch(err => {
       console.error(err);
-      // Fallback: if getCameras throws an error (happens in some Safari versions), just force environment
       startScannerWithId({ facingMode: "environment" }, html5QrCode);
     });
 
@@ -191,9 +165,10 @@ export default function BarcodeScannerCamera({ onScan, onClose, title = "Scan Ba
       )}
 
       {/* The scanner element */}
-      <div className="relative w-full max-w-md bg-black rounded-xl overflow-hidden min-h-[250px] md:min-h-[300px]">
-         {!isError && <span className="text-zinc-500 animate-pulse font-bold text-sm absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-0">Waa la furaayaa Kamarada...</span>}
-         <div id="html5-qr-reader" className="absolute top-0 left-0 w-full h-full [&>video]:absolute [&>video]:top-0 [&>video]:left-0 [&>video]:w-full [&>video]:h-full [&>video]:object-contain [&>canvas]:absolute [&>canvas]:top-0 [&>canvas]:left-0 [&>canvas]:w-full [&>canvas]:h-full z-10" />
+      <div className="relative w-full max-w-md bg-black rounded-xl overflow-hidden min-h-[300px] flex flex-col items-center justify-center">
+         {!isError && <span className="text-zinc-500 animate-pulse font-bold text-sm absolute z-0">Waa la furaayaa Kamarada...</span>}
+         {/* Let html5-qrcode handle the styling internally to prevent CSS conflicts */}
+         <div id="html5-qr-reader" className="w-full z-10" style={{ border: 'none' }} />
       </div>
       
       <div className="flex items-center justify-between w-full mt-4 max-w-md">
