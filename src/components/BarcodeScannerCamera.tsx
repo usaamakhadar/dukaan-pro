@@ -96,53 +96,66 @@ export default function BarcodeScannerCamera({ onScan, onClose, title = "Scan Ba
           height: { min: 480, ideal: 720, max: 1080 }
         };
 
-    instance.start(
-      constraints,
-      { 
-        fps: 30, 
-        qrbox: (width, height) => {
-          // For barcode scanning, we want a wider box so the barcode fits easily.
-          const widthBox = Math.floor(width * 0.85);
-          const heightBox = Math.floor(height * 0.40);
-          return { width: widthBox, height: heightBox };
+    const tryStart = (c: any, isFallback: boolean) => {
+      instance.start(
+        c,
+        { 
+          fps: 30, 
+          qrbox: (width, height) => {
+            // For barcode scanning, we want a wider box so the barcode fits easily.
+            const widthBox = Math.floor(width * 0.85);
+            const heightBox = Math.floor(height * 0.40);
+            return { width: widthBox, height: heightBox };
+          },
+          aspectRatio: 1.7777778
         },
-        aspectRatio: 1.7777778
-      },
-      (decodedText) => {
-         const now = Date.now();
-         const cleanCode = decodedText.trim();
-         
-         if (cleanCode !== lastScannedCodeRef.current || (now - lastScanTimeRef.current) > 2000) {
-            lastScannedCodeRef.current = cleanCode;
-            lastScanTimeRef.current = now;
-            
-            try {
-               const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
-               if (AudioContextClass) {
-                  const audioCtx = new AudioContextClass();
-                  const osc = audioCtx.createOscillator();
-                  const gain = audioCtx.createGain();
-                  osc.type = "sine";
-                  osc.frequency.setValueAtTime(950, audioCtx.currentTime);
-                  gain.gain.setValueAtTime(0.08, audioCtx.currentTime);
-                  gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.12);
-                  osc.connect(gain);
-                  gain.connect(audioCtx.destination);
-                  osc.start();
-                  osc.stop(audioCtx.currentTime + 0.12);
-               }
-            } catch (e) {
-               console.error("Beep audio failed to play:", e);
-            }
-            
-            onScan(decodedText);
-         }
-      },
-      (errorMessage) => { /* ignore */ }
-    ).catch(err => {
-        setIsError("Fadlan u fasax Browserka (Allow Camera) inuu shido kamaradda.");
-        console.error("Initiation error:", err);
-    });
+        (decodedText) => {
+           const now = Date.now();
+           const cleanCode = decodedText.trim();
+           
+           if (cleanCode !== lastScannedCodeRef.current || (now - lastScanTimeRef.current) > 2000) {
+              lastScannedCodeRef.current = cleanCode;
+              lastScanTimeRef.current = now;
+              
+              try {
+                 const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
+                 if (AudioContextClass) {
+                    const audioCtx = new AudioContextClass();
+                    const osc = audioCtx.createOscillator();
+                    const gain = audioCtx.createGain();
+                    osc.type = "sine";
+                    osc.frequency.setValueAtTime(950, audioCtx.currentTime);
+                    gain.gain.setValueAtTime(0.08, audioCtx.currentTime);
+                    gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.12);
+                    osc.connect(gain);
+                    gain.connect(audioCtx.destination);
+                    osc.start();
+                    osc.stop(audioCtx.currentTime + 0.12);
+                 }
+              } catch (e) {
+                 console.error("Beep audio failed to play:", e);
+              }
+              
+              onScan(decodedText);
+           }
+        },
+        (errorMessage) => { /* ignore */ }
+      ).catch(err => {
+          if (!isFallback) {
+             console.warn("HD constraints failed, falling back to basic constraints", err);
+             // Basic fallback constraints
+             const fallbackConstraints = typeof cameraIdOrObj === 'string'
+               ? { deviceId: { exact: cameraIdOrObj } }
+               : { facingMode: "environment" };
+             tryStart(fallbackConstraints, true);
+          } else {
+             setIsError("Fadlan u fasax Browserka (Allow Camera) inuu shido kamaradda.");
+             console.error("Initiation error:", err);
+          }
+      });
+    };
+
+    tryStart(constraints, false);
   };
 
   const flipCamera = () => {

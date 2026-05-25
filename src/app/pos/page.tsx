@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { 
   Search, Bell, HelpCircle, LayoutDashboard, ShoppingBag, 
-  Receipt, Users, Settings, Plus, Minus, Trash2, Globe, PackageOpen, X, Wallet, Camera, Menu, ShoppingCart, Check, LogOut
+  Receipt, Users, Settings, Plus, Minus, Trash2, Globe, PackageOpen, X, Wallet, Camera, Menu, ShoppingCart, Check, LogOut, RefreshCw
 } from "lucide-react";
 import {
   Sheet,
@@ -118,19 +118,16 @@ export default function POSPage() {
         // @ts-ignore
         setStoreName(roleData.tenants?.name || "");
         
-        // Fetch Settings
-        const { data: settings } = await supabase
-          .from('tenant_settings')
-          .select('*')
-          .eq('tenant_id', roleData.tenant_id)
-          .single();
+        // Fetch Settings, Products, and Customers in parallel to boost speed dramatically!
+        const [settingsRes] = await Promise.all([
+          supabase.from('tenant_settings').select('*').eq('tenant_id', roleData.tenant_id).single(),
+          fetchProducts(),
+          fetchCustomers()
+        ]);
         
-        if (settings) {
-           setTenantSettings(settings);
+        if (settingsRes.data) {
+           setTenantSettings(settingsRes.data);
         }
-
-        fetchProducts();
-        fetchCustomers();
       }
     } else {
         window.location.replace('/login');
@@ -712,10 +709,25 @@ export default function POSPage() {
               <h2 className="text-4xl font-bold text-[#141b2d] mb-2 tracking-tight">{lang === 'en' ? 'Cashier Layout' : 'Meesha Iibka'}</h2>
               <p className="text-zinc-500 text-lg">{lang === 'en' ? 'Select products below to add to cart.' : 'Riix alaabta si ay u gasho Khasnadda.'}</p>
             </div>
-            <Button onClick={() => setIsCameraOpen(!isCameraOpen)} variant="outline" className="border-zinc-200 text-[#141b2d] bg-white h-12 rounded-xl shadow-sm hover:bg-zinc-50">
-               <Camera className="h-5 w-5 mr-2" />
-               {isCameraOpen ? "Close Camera" : "Scan Barkood (Kamarad)"}
-            </Button>
+            <div className="flex gap-2">
+               <Button 
+                  onClick={async () => {
+                     const loadToast = toast.loading(lang === 'en' ? 'Refreshing products...' : 'Waa la cusboonaysiinayaa alaabta...');
+                     await fetchProducts();
+                     toast.dismiss(loadToast);
+                     toast.success(lang === 'en' ? 'Refreshed! ✅' : 'Waa la cusboonaysiiyay! ✅');
+                  }} 
+                  variant="outline" 
+                  className="border-zinc-200 text-[#141b2d] bg-white h-12 rounded-xl shadow-sm hover:bg-zinc-50 font-bold"
+               >
+                  <RefreshCw className="h-4 w-4 mr-2" />
+                  {lang === 'en' ? 'Refresh' : 'Cusboonaysii'}
+               </Button>
+               <Button onClick={() => setIsCameraOpen(!isCameraOpen)} variant="outline" className="border-zinc-200 text-[#141b2d] bg-white h-12 rounded-xl shadow-sm hover:bg-zinc-50 font-bold">
+                  <Camera className="h-5 w-5 mr-2" />
+                  {isCameraOpen ? "Close Camera" : "Scan Barkood (Kamarad)"}
+               </Button>
+            </div>
           </div>
 
           {isCameraOpen && (
