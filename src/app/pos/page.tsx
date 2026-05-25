@@ -20,6 +20,9 @@ import { toast } from "sonner";
 import { useLanguage } from "@/lib/i18n";
 import { createClient } from "@/lib/supabase/client";
 import BarcodeScannerCamera from "@/components/BarcodeScannerCamera";
+import useBarcodeScanner from "@/hooks/useBarcodeScanner";
+import { barcodeService } from "@/lib/barcode/barcode-service";
+import { playErrorBeep } from "@/lib/barcode/scanner-audio";
 import { toPng } from 'html-to-image';
 import download from 'downloadjs';
 import { jsPDF } from 'jspdf';
@@ -65,10 +68,6 @@ export default function POSPage() {
   const [isCustomerModalOpen, setIsCustomerModalOpen] = useState(false);
   const [customers, setCustomers] = useState<any[]>([]);
   const [selectedCustomer, setSelectedCustomer] = useState<any>(null);
-
-  // Barcode Scanner State
-  const [barcodeBuffer, setBarcodeBuffer] = useState("");
-  const [lastKeyTime, setLastKeyTime] = useState(0);
   const [isCameraOpen, setIsCameraOpen] = useState(false);
   const [isCartOpenMobile, setIsCartOpenMobile] = useState(false);
   const [showReceipt, setShowReceipt] = useState(false);
@@ -147,6 +146,7 @@ export default function POSPage() {
 
     if (products) {
       setDbProducts(products);
+      barcodeService.rebuildCache(products);
 
       // Extract unique categories dynamically
       const uniqueCats = new Set<string>();
@@ -263,66 +263,55 @@ export default function POSPage() {
        return;
     }
 
-    const exists = cart.find((item) => item.id === product.id);
-    if (exists) {
-      if (exists.qty >= product.stock) {
-         toast.error(lang === 'en' ? "Max stock reached!" : "Alaab xaddi intaas la eg kuma jirto kaydka!");
-         return;
+    setCart((prevCart) => {
+      const exists = prevCart.find((item) => item.id === product.id);
+      if (exists) {
+        if (exists.qty >= product.stock) {
+           setTimeout(() => {
+             toast.error(lang === 'en' ? "Max stock reached!" : "Alaab xaddi intaas la eg kuma jirto kaydka!");
+           }, 0);
+           return prevCart;
+        }
+        setTimeout(() => {
+          toast.success(lang === 'en' ? `${product.name} +1` : `${product.name} lagu daray +1`);
+        }, 0);
+        return prevCart.map((item) => item.id === product.id ? { ...item, qty: item.qty + 1 } : item);
+      } else {
+        setTimeout(() => {
+          toast.success(lang === 'en' ? `${product.name} added!` : `Waa lagu daray ${product.name}!`);
+        }, 0);
+        return [...prevCart, { 
+          id: product.id, 
+          name: product.name, 
+          price: parseFloat(product.price), 
+          image: product.image_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(product.name)}&background=random&color=fff&size=400`,
+          stock: product.stock,
+          qty: 1 
+        }];
       }
-      toast.success(lang === 'en' ? `${product.name} +1` : `${product.name} lagu daray +1`);
-      setCart((prev) => prev.map((item) => item.id === product.id ? { ...item, qty: item.qty + 1 } : item));
-    } else {
-      toast.success(lang === 'en' ? `${product.name} added!` : `Waa lagu daray ${product.name}!`);
-      setCart((prev) => [...prev, { 
-        id: product.id, 
-        name: product.name, 
-        price: parseFloat(product.price), 
-        image: product.image_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(product.name)}&background=random&color=fff&size=400`,
-        stock: product.stock,
-        qty: 1 
-      }]);
-    }
+    });
   };
 
-  // Barcode Scanning Logic
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      // Don't interfere if an input is focused
-      if (['INPUT', 'TEXTAREA'].includes((e.target as HTMLElement).tagName)) return;
-
-      const currentTime = new Date().getTime();
-      
-      // If Enter key is pressed, process the barcode buffer
-      if (e.key === 'Enter') {
-        if (barcodeBuffer.length > 2) {
-           const cleanCode = barcodeBuffer.trim().toUpperCase();
-           const matchedProduct = dbProducts.find(p => 
-              (p.sku && p.sku.toUpperCase() === cleanCode) || 
-              (p.barcode && p.barcode.toUpperCase() === cleanCode)
-           );
-           if (matchedProduct) {
-              addToCart(matchedProduct);
-           } else {
-              toast.error(lang === 'en' ? `Product not found! (${cleanCode})` : `Badeecada lama helin! (${cleanCode})`);
-           }
+  // Barcode Engine Hook Integration
+  const { inputRef } = useBarcodeScanner({
+    isEnabled: true,
+    onScan: (barcode) => {
+      barcodeService.enqueueScan(
+        barcode,
+        (product) => {
+          addToCart(product);
+        },
+        (notFoundCode) => {
+          playErrorBeep();
+          toast.error(lang === 'en' ? `Product not found! (${notFoundCode})` : `Badeecada lama helin! (${notFoundCode})`);
+        },
+        (error, failedCode) => {
+          playErrorBeep();
+          toast.error(lang === 'en' ? `Lookup error! (${failedCode})` : `Khalad baaritaan! (${failedCode})`);
         }
-        setBarcodeBuffer("");
-        return;
-      }
-
-      // Hardware scanners type very fast (usually < 30ms per char)
-      // If time since last key is large, reset buffer
-      if (currentTime - lastKeyTime > 50) {
-         setBarcodeBuffer(e.key);
-      } else {
-         setBarcodeBuffer(prev => prev + e.key);
-      }
-      setLastKeyTime(currentTime);
-    };
-
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [barcodeBuffer, lastKeyTime, dbProducts, lang]);
+      );
+    }
+  });
 
   const updateQty = (id: string, delta: number) => {
     setCart((prev) => {
@@ -390,10 +379,43 @@ export default function POSPage() {
       const { error: itemsError } = await supabase.from('sale_items').insert(saleItems);
       if (itemsError) throw itemsError;
 
-      // 3. Deduct Stock
+      // 3. Deduct Stock (with atomic conditional check-and-update to prevent race conditions)
       for (const item of cart) {
-        const newStock = item.stock - item.qty;
-        await supabase.from('products').update({ stock: newStock }).eq('id', item.id);
+        const { data: dbProd, error: prodErr } = await supabase
+          .from('products')
+          .select('stock, name')
+          .eq('id', item.id)
+          .single();
+
+        if (prodErr || !dbProd) {
+          throw new Error(lang === 'en' ? `Product ${item.name} not found!` : `Badeecada ${item.name} lama helin!`);
+        }
+
+        if (dbProd.stock < item.qty) {
+          throw new Error(lang === 'en' 
+            ? `Insufficient stock for ${item.name}! Available: ${dbProd.stock}` 
+            : `Kayd ku filan ma laha ${item.name}! Inta ku hartay: ${dbProd.stock}`
+          );
+        }
+
+        const newStock = dbProd.stock - item.qty;
+        
+        // Optimistic Concurrency Control (Compare-And-Swap) using WHERE clause constraint
+        const { data: updatedData, error: updateErr } = await supabase
+          .from('products')
+          .update({ stock: newStock })
+          .eq('id', item.id)
+          .gte('stock', item.qty)
+          .select();
+
+        if (updateErr) throw updateErr;
+
+        if (!updatedData || updatedData.length === 0) {
+          throw new Error(lang === 'en'
+            ? `Stock for ${item.name} was changed by another cashier! Please refresh and try again.`
+            : `Kaydka alaabta ${item.name} waxaa wax ka beddelay khasnaji kale! Fadlan cusboonaysii (Refresh) oo isku day mar kale.`
+          );
+        }
       }
 
       // 4. Update Customer Wallet if Debt
@@ -629,6 +651,14 @@ export default function POSPage() {
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="w-full pl-11 md:pl-12 pr-4 py-2.5 md:py-3 bg-[#eef0f3] border-none rounded-xl text-base focus:outline-none focus:ring-2 focus:ring-[#0b132b]/20 text-[#141b2d] placeholder-zinc-500"
               />
+              {/* Hidden input field for hardware barcode scanner */}
+              <input 
+                 ref={inputRef}
+                 type="text" 
+                 className="absolute opacity-0 pointer-events-none h-0 w-0" 
+                 tabIndex={-1}
+                 aria-hidden="true"
+              />
             </div>
           </div>
           <div className="flex items-center space-x-2 md:space-x-6 ml-2 md:ml-0">
@@ -734,17 +764,20 @@ export default function POSPage() {
              <div className="mb-8 w-full flex justify-center bg-zinc-50 p-6 rounded-3xl border-2 border-dashed border-zinc-200">
                <BarcodeScannerCamera 
                   onScan={(decodedText) => {
-                     const cleanCode = decodedText.trim().toUpperCase();
-                     const matchedProduct = dbProducts.find(p => 
-                        (p.sku && p.sku.toUpperCase() === cleanCode) || 
-                        (p.barcode && p.barcode.toUpperCase() === cleanCode)
+                     barcodeService.enqueueScan(
+                        decodedText,
+                        (product) => {
+                           addToCart(product);
+                        },
+                        (notFoundBarcode) => {
+                           playErrorBeep();
+                           toast.error(lang === 'en' ? `Product not found! (${notFoundBarcode})` : `Badeecada lama helin! (${notFoundBarcode})`);
+                        },
+                        (error, failedBarcode) => {
+                           playErrorBeep();
+                           toast.error(lang === 'en' ? `Lookup error! (${failedBarcode})` : `Khalad baaritaan! (${failedBarcode})`);
+                        }
                      );
-                     if (matchedProduct) {
-                        addToCart(matchedProduct);
-                        toast.success(lang === 'en' ? `Added ${matchedProduct.name}` : `Waa lagu daray ${matchedProduct.name}`);
-                     } else {
-                        toast.error(lang === 'en' ? `Product not found! (${cleanCode})` : `Badeecada lama helin! (${cleanCode})`);
-                     }
                   }} 
                   onClose={() => setIsCameraOpen(false)}
                />
@@ -895,7 +928,8 @@ export default function POSPage() {
         {/* Cart Items List */}
         <div className="flex-1 overflow-y-auto custom-scrollbar p-6 space-y-6">
           {cart.map((item) => (
-            <div key={item.id} className="flex gap-4">
+            <div key={item.id} className="flex gap-4 relative overflow-hidden rounded-2xl p-2 -m-2">
+              <div key={item.qty} className="absolute inset-0 pointer-events-none rounded-2xl animate-flash-green" />
               <div className="h-20 w-16 bg-zinc-100 rounded-lg overflow-hidden shrink-0 relative border border-zinc-200">
                 <img src={item.image} alt={item.name} className="object-cover w-full h-full" />
               </div>

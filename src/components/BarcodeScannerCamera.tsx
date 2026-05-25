@@ -1,8 +1,15 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, useCallback } from 'react';
 import { Html5Qrcode, Html5QrcodeSupportedFormats } from 'html5-qrcode';
 import { RefreshCw } from 'lucide-react';
+import { playSuccessBeep } from '@/lib/barcode/scanner-audio';
+
+
+interface CameraDevice {
+  id: string;
+  label: string;
+}
 
 interface BarcodeScannerCameraProps {
   onScan: (decodedText: string) => void;
@@ -12,12 +19,97 @@ interface BarcodeScannerCameraProps {
 
 export default function BarcodeScannerCamera({ onScan, onClose, title = "Scan Barcode" }: BarcodeScannerCameraProps) {
   const [isError, setIsError] = useState<string | null>(null);
-  const [cameras, setCameras] = useState<any[]>([]);
+  const [cameras, setCameras] = useState<CameraDevice[]>([]);
   const [currentCamIdx, setCurrentCamIdx] = useState(0);
   const scannerRef = useRef<Html5Qrcode | null>(null);
   const lastScannedCodeRef = useRef<string>("");
   const lastScanTimeRef = useRef<number>(0);
+
+  const initStart = useCallback((cameraIdOrObj: string | MediaTrackConstraints, instance: Html5Qrcode) => {
+    // Construct camera constraints to force High Definition (720p/1080p)
+    const constraints = typeof cameraIdOrObj === 'string'
+      ? {
+          deviceId: { exact: cameraIdOrObj },
+          width: { min: 640, ideal: 1280, max: 1920 },
+          height: { min: 480, ideal: 720, max: 1080 }
+        }
+      : {
+          facingMode: "environment",
+          width: { min: 640, ideal: 1280, max: 1920 },
+          height: { min: 480, ideal: 720, max: 1080 }
+        };
+
+    const tryStart = (c: string | MediaTrackConstraints, isFallback: boolean) => {
+      instance.start(
+        c,
+        { 
+          fps: 30, 
+          qrbox: (width, height) => {
+            // For barcode scanning, we want a wider box so the barcode fits easily.
+            const widthBox = Math.floor(width * 0.85);
+            const heightBox = Math.floor(height * 0.40);
+            return { width: widthBox, height: heightBox };
+          },
+          aspectRatio: 1.7777778
+        },
+        (decodedText) => {
+           const now = Date.now();
+           const cleanCode = decodedText.trim();
+           
+           if (cleanCode !== lastScannedCodeRef.current || (now - lastScanTimeRef.current) > 2000) {
+              lastScannedCodeRef.current = cleanCode;
+              lastScanTimeRef.current = now;
+              
+              playSuccessBeep();
+              onScan(decodedText);
+           }
+        },
+        () => { /* ignore */ }
+      ).catch(err => {
+          if (!isFallback) {
+             console.warn("HD constraints failed, falling back to basic constraints", err);
+             // Basic fallback constraints
+             const fallbackConstraints = typeof cameraIdOrObj === 'string'
+               ? { deviceId: { exact: cameraIdOrObj } }
+               : { facingMode: "environment" };
+             tryStart(fallbackConstraints, true);
+          } else {
+             const errorName = err instanceof Error ? err.name : String(err);
+             const errorMsg = err instanceof Error ? err.message : String(err);
+             
+             if (errorName === 'NotAllowedError' || errorName === 'PermissionDeniedError') {
+                setIsError("Fadlan u fasax Browserka (Allow Camera) inuu shido kamaradda.");
+             } else if (errorName === 'NotReadableError' || errorName === 'TrackStartError') {
+                setIsError("Kamaradu wey mashquulsan tahay (Busy). Waxaa laga yaabaa in tab kale ama app kale uu isticmaalayo.");
+             } else if (errorName === 'NotFoundError' || errorName === 'DevicesNotFoundError') {
+                setIsError("Wax kamarad ah oo shaqaynaya lama helin.");
+             } else {
+                setIsError(`Khalad ka dhacay shidista kamarada: ${errorMsg}`);
+             }
+             console.error("Initiation error:", err);
+          }
+      });
+    };
+
+    tryStart(constraints, false);
+  }, [onScan]);
+
+  const startScannerWithId = useCallback((cameraIdOrObj: string | MediaTrackConstraints, instance: Html5Qrcode) => {
+      if (instance.isScanning) {
+          instance.stop().then(() => {
+             initStart(cameraIdOrObj, instance);
+          }).catch(console.error);
+      } else {
+          initStart(cameraIdOrObj, instance);
+      }
+  }, [initStart]);
+
   useEffect(() => {
+    if (typeof navigator === 'undefined' || !navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+      setIsError("Browser-kaaga ma taageero kamarad baadhista (HTTPS ayaa loo baahan yahay).");
+      return;
+    }
+
     const html5QrCode = new Html5Qrcode("html5-qr-reader", {
       verbose: false,
       formatsToSupport: [
@@ -70,93 +162,7 @@ export default function BarcodeScannerCamera({ onScan, onClose, title = "Scan Ba
          scannerRef.current.stop().catch(console.error);
       }
     };
-  }, [onScan]);
-
-  const startScannerWithId = (cameraIdOrObj: any, instance: Html5Qrcode) => {
-      if (instance.isScanning) {
-          instance.stop().then(() => {
-             initStart(cameraIdOrObj, instance);
-          }).catch(console.error);
-      } else {
-          initStart(cameraIdOrObj, instance);
-      }
-  };
-
-  const initStart = (cameraIdOrObj: any, instance: Html5Qrcode) => {
-    // Construct camera constraints to force High Definition (720p/1080p)
-    const constraints = typeof cameraIdOrObj === 'string'
-      ? {
-          deviceId: { exact: cameraIdOrObj },
-          width: { min: 640, ideal: 1280, max: 1920 },
-          height: { min: 480, ideal: 720, max: 1080 }
-        }
-      : {
-          facingMode: "environment",
-          width: { min: 640, ideal: 1280, max: 1920 },
-          height: { min: 480, ideal: 720, max: 1080 }
-        };
-
-    const tryStart = (c: any, isFallback: boolean) => {
-      instance.start(
-        c,
-        { 
-          fps: 30, 
-          qrbox: (width, height) => {
-            // For barcode scanning, we want a wider box so the barcode fits easily.
-            const widthBox = Math.floor(width * 0.85);
-            const heightBox = Math.floor(height * 0.40);
-            return { width: widthBox, height: heightBox };
-          },
-          aspectRatio: 1.7777778
-        },
-        (decodedText) => {
-           const now = Date.now();
-           const cleanCode = decodedText.trim();
-           
-           if (cleanCode !== lastScannedCodeRef.current || (now - lastScanTimeRef.current) > 2000) {
-              lastScannedCodeRef.current = cleanCode;
-              lastScanTimeRef.current = now;
-              
-              try {
-                 const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
-                 if (AudioContextClass) {
-                    const audioCtx = new AudioContextClass();
-                    const osc = audioCtx.createOscillator();
-                    const gain = audioCtx.createGain();
-                    osc.type = "sine";
-                    osc.frequency.setValueAtTime(950, audioCtx.currentTime);
-                    gain.gain.setValueAtTime(0.08, audioCtx.currentTime);
-                    gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.12);
-                    osc.connect(gain);
-                    gain.connect(audioCtx.destination);
-                    osc.start();
-                    osc.stop(audioCtx.currentTime + 0.12);
-                 }
-              } catch (e) {
-                 console.error("Beep audio failed to play:", e);
-              }
-              
-              onScan(decodedText);
-           }
-        },
-        (errorMessage) => { /* ignore */ }
-      ).catch(err => {
-          if (!isFallback) {
-             console.warn("HD constraints failed, falling back to basic constraints", err);
-             // Basic fallback constraints
-             const fallbackConstraints = typeof cameraIdOrObj === 'string'
-               ? { deviceId: { exact: cameraIdOrObj } }
-               : { facingMode: "environment" };
-             tryStart(fallbackConstraints, true);
-          } else {
-             setIsError("Fadlan u fasax Browserka (Allow Camera) inuu shido kamaradda.");
-             console.error("Initiation error:", err);
-          }
-      });
-    };
-
-    tryStart(constraints, false);
-  };
+  }, [onScan, startScannerWithId]);
 
   const flipCamera = () => {
      if (cameras.length > 1 && scannerRef.current) {

@@ -17,8 +17,18 @@ import {
 } from "@/components/ui/dialog";
 import { useLanguage } from "@/lib/i18n";
 import { createClient } from "@/lib/supabase/client";
+import { generateEAN13 } from "@/lib/barcode/barcode-utils";
 
-type Product = { id: string; sku: string; name: string; stock: number; price: string; status: string };
+type Product = { 
+  id: string; 
+  sku: string; 
+  name: string; 
+  stock: number; 
+  price: string; 
+  status: string; 
+  barcode?: string; 
+  image_url?: string;
+};
 
 export default function InventoryPage() {
   const { t, lang } = useLanguage();
@@ -33,12 +43,8 @@ export default function InventoryPage() {
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [isCameraOpen, setIsCameraOpen] = useState(false);
   
-  // Barcode Scanner State for Dialogs
-  const [barcodeBuffer, setBarcodeBuffer] = useState("");
-  const [lastKeyTime, setLastKeyTime] = useState(0);
-  
   // Control Forms
-  const [formData, setFormData] = useState({ id: '', sku: '', name: '', price: '', stock: '', image_url: '' });
+  const [formData, setFormData] = useState({ id: '', sku: '', name: '', price: '', stock: '', image_url: '', barcode: '' });
   const [searchQuery, setSearchQuery] = useState("");
 
   // Handler for product image upload (with compression)
@@ -127,10 +133,12 @@ export default function InventoryPage() {
         setInventory(products.map((p: any) => ({
           id: p.id,
           sku: p.sku || '',
+          barcode: p.barcode || '',
           name: p.name,
           stock: p.stock,
           price: p.price.toString(),
-          status: getStatus(p.stock)
+          status: getStatus(p.stock),
+          image_url: p.image_url || ''
         })));
       }
     }
@@ -139,49 +147,12 @@ export default function InventoryPage() {
   
   const filteredInventory = inventory.filter(item => 
     item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    item.sku.toLowerCase().includes(searchQuery.toLowerCase())
+    item.sku.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    (item.barcode && item.barcode.toLowerCase().includes(searchQuery.toLowerCase()))
   );
 
-  // Barcode Scanning Logic for Filling SKU
-  useEffect(() => {
-    if (!isAddOpen && !isEditOpen) return;
-
-    const handleKeyDown = (e: KeyboardEvent) => {
-      // Don't interfere if an actual input is focused, unless we want to catch it globally
-      // But for SKU, it's safe to capture globally if not inside a text area
-      if ((e.target as HTMLElement).tagName === 'TEXTAREA') return;
-      if ((e.target as HTMLElement).tagName === 'INPUT' && (e.target as HTMLInputElement).name !== 'sku') {
-         // Allow typing in other inputs
-      }
-
-      const currentTime = new Date().getTime();
-      
-      // Hardware scanners usually hit 'Enter' at the end of the barcode
-      if (e.key === 'Enter' && barcodeBuffer.length > 2) {
-         setFormData(prev => ({ ...prev, sku: barcodeBuffer }));
-         toast.success(lang === 'en' ? `Barcode Scanned: ${barcodeBuffer}` : `Barcode-ka waa la aqoonsaday: ${barcodeBuffer}`);
-         setBarcodeBuffer("");
-         
-         // Prevent form submission if we happen to be in an input
-         e.preventDefault();
-         return;
-      }
-
-      // Scanner speed check (<50ms per key)
-      if (currentTime - lastKeyTime > 50) {
-         setBarcodeBuffer(e.key);
-      } else {
-         setBarcodeBuffer(prev => prev + e.key);
-      }
-      setLastKeyTime(currentTime);
-    };
-
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [isAddOpen, isEditOpen, barcodeBuffer, lastKeyTime, lang]);
-
   const handleOpenAdd = () => {
-    setFormData({ id: '', sku: '', name: '', price: '', stock: '', image_url: '' });
+    setFormData({ id: '', sku: '', name: '', price: '', stock: '', image_url: '', barcode: '' });
     setIsAddOpen(true);
   };
 
@@ -200,10 +171,20 @@ export default function InventoryPage() {
       return;
     }
 
+    // Check if Barcode exists (if provided)
+    if (formData.barcode) {
+      const cleanBarcode = formData.barcode.trim().toUpperCase();
+      if (inventory.some(p => p.barcode && p.barcode.toUpperCase() === cleanBarcode)) {
+        toast.error(lang === 'en' ? "Barcode already exists!" : "Barcode-kaan horay ayuu dukaanka ugu diiwaangashan yahay! Mid kale keen.");
+        return;
+      }
+    }
+
     const stockNum = parseInt(formData.stock, 10);
     const productData = {
       tenant_id: tenantId,
       sku: formData.sku.toUpperCase(),
+      barcode: formData.barcode ? formData.barcode.trim() : null,
       name: formData.name,
       price: parseFloat(formData.price || "0"),
       stock: isNaN(stockNum) ? 0 : stockNum,
@@ -221,10 +202,12 @@ export default function InventoryPage() {
       setInventory((prev) => [{
         id: data.id,
         sku: data.sku || '',
+        barcode: data.barcode || '',
         name: data.name,
         price: data.price.toString(),
         stock: data.stock,
-        status: getStatus(data.stock)
+        status: getStatus(data.stock),
+        image_url: data.image_url || ''
       }, ...prev]);
     }
     
@@ -232,14 +215,15 @@ export default function InventoryPage() {
     toast.success(lang === 'en' ? "Product added successfully! 🛒" : "Badeeco cusub si guul leh baa kaydka loogu daray! 🛒");
   };
 
-  const handleOpenEdit = (product: Product & { image_url?: string }) => {
+  const handleOpenEdit = (product: Product) => {
     setFormData({ 
       id: product.id,
       sku: product.sku, 
       name: product.name, 
       price: product.price, 
       stock: product.stock.toString(),
-      image_url: product.image_url || ''
+      image_url: product.image_url || '',
+      barcode: product.barcode || ''
     });
     setIsEditOpen(true);
   };
@@ -250,11 +234,28 @@ export default function InventoryPage() {
       toast.error(lang === 'en' ? "Please fill all fields. ⚠️" : "Fadlan ha ka tegin wax banaan. ⚠️");
       return;
     }
+
+    // Check if SKU exists on another product
+    if (inventory.some(p => p.id !== formData.id && p.sku.toUpperCase() === formData.sku.toUpperCase())) {
+      toast.error(lang === 'en' ? "SKU already exists on another product!" : "SKU-gaan wuxuu u diiwaangashan yahay badeeco kale! Koodh kale keen.");
+      return;
+    }
+
+    // Check if Barcode exists on another product (if provided)
+    if (formData.barcode) {
+      const cleanBarcode = formData.barcode.trim().toUpperCase();
+      if (inventory.some(p => p.id !== formData.id && p.barcode && p.barcode.toUpperCase() === cleanBarcode)) {
+        toast.error(lang === 'en' ? "Barcode already exists on another product!" : "Barcode-kaan wuxuu u diiwaangashan yahay badeeco kale! Mid kale keen.");
+        return;
+      }
+    }
+
     const stockNum = parseInt(formData.stock, 10);
     
     const { error } = await supabase.from('products')
       .update({
         sku: formData.sku.toUpperCase(),
+        barcode: formData.barcode ? formData.barcode.trim() : null,
         name: formData.name,
         price: parseFloat(formData.price || "0"),
         stock: isNaN(stockNum) ? 0 : stockNum,
@@ -272,10 +273,12 @@ export default function InventoryPage() {
         return {
           ...p,
           sku: formData.sku.toUpperCase(),
+          barcode: formData.barcode || '',
           name: formData.name,
           price: parseFloat(formData.price || "0").toFixed(2),
           stock: isNaN(stockNum) ? 0 : stockNum,
-          status: getStatus(isNaN(stockNum) ? 0 : stockNum)
+          status: getStatus(isNaN(stockNum) ? 0 : stockNum),
+          image_url: formData.image_url || ''
         };
       }
       return p;
@@ -336,6 +339,7 @@ export default function InventoryPage() {
           <TableHeader>
             <TableRow className="border-b border-zinc-100 bg-[#f9f9fb] hover:bg-[#f9f9fb]">
               <TableHead className="text-zinc-400 font-extrabold uppercase text-[10px] tracking-widest px-6 py-4">{t('sku')}</TableHead>
+              <TableHead className="text-zinc-400 font-extrabold uppercase text-[10px] tracking-widest px-6">Barcode</TableHead>
               <TableHead className="text-zinc-400 font-extrabold uppercase text-[10px] tracking-widest px-6">{t('name')}</TableHead>
               <TableHead className="text-zinc-400 font-extrabold uppercase text-[10px] tracking-widest px-6">{t('price')}</TableHead>
               <TableHead className="text-zinc-400 font-extrabold uppercase text-[10px] tracking-widest px-6">{t('stock')}</TableHead>
@@ -346,15 +350,16 @@ export default function InventoryPage() {
           <TableBody>
             {isLoading ? (
                <TableRow>
-                 <TableCell colSpan={6} className="text-center py-10 text-zinc-500 font-medium">Loading Inventory...</TableCell>
+                 <TableCell colSpan={7} className="text-center py-10 text-zinc-500 font-medium">Loading Inventory...</TableCell>
                </TableRow>
              ) : filteredInventory.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={6} className="text-center py-10 text-zinc-500 font-medium">No results found for "{searchQuery}"</TableCell>
+                  <TableCell colSpan={7} className="text-center py-10 text-zinc-500 font-medium">No results found for "{searchQuery}"</TableCell>
                 </TableRow>
              ) : filteredInventory.map((item) => (
               <TableRow key={item.id} className="border-b border-zinc-100 hover:bg-[#f9f9fb] transition-colors group">
                 <TableCell className="font-extrabold text-zinc-400 px-6 uppercase tracking-wider">{item.sku}</TableCell>
+                <TableCell className="font-extrabold text-zinc-500 px-6 uppercase tracking-wider">{item.barcode || '-'}</TableCell>
                 <TableCell className="font-extrabold text-[#141b2d] px-6">
                   <div className="flex items-center space-x-4">
                     <div className="h-10 w-10 shrink-0 bg-white border border-zinc-100 shadow-sm rounded-xl overflow-hidden flex items-center justify-center p-0.5">
@@ -423,19 +428,45 @@ export default function InventoryPage() {
               />
             </div>
             <div className="grid gap-2">
+              <label className="text-sm font-bold text-zinc-600">{t('sku')}</label>
+              <Input 
+                name="sku"
+                placeholder="e.g. PRD-001"
+                className="bg-[#f9f9fb] h-11 border-zinc-200 text-[#141b2d] uppercase"
+                value={formData.sku}
+                onChange={(e) => setFormData({...formData, sku: e.target.value})}
+              />
+            </div>
+            <div className="grid gap-2">
               <label className="text-sm font-bold text-zinc-600 flex justify-between items-center">
-                 <span>{t('sku')} (Scan Barcode here)</span>
-                 <Button type="button" variant="ghost" size="sm" className="h-6 px-2 text-zinc-500 hover:text-blue-600" onClick={() => setIsCameraOpen(!isCameraOpen)}>
-                    <Camera className="h-4 w-4 mr-1" />
-                    {isCameraOpen ? "Xidh Kamarada" : "Daar Kamarada!"}
-                 </Button>
+                 <span>Barcode</span>
+                 <div className="flex space-x-2">
+                   <Button 
+                      type="button" 
+                      variant="ghost" 
+                      size="sm" 
+                      className="h-6 px-2 text-zinc-500 hover:text-blue-600 font-bold" 
+                      onClick={() => {
+                        const existing = inventory.map(p => p.barcode || '');
+                        const newCode = generateEAN13(existing);
+                        setFormData(prev => ({ ...prev, barcode: newCode }));
+                        toast.success(lang === 'en' ? `Generated Barcode: ${newCode}` : `Barcode cusub ayaa la sameeyay: ${newCode}`);
+                      }}
+                   >
+                      💡 Generate
+                   </Button>
+                   <Button type="button" variant="ghost" size="sm" className="h-6 px-2 text-zinc-500 hover:text-blue-600 font-bold" onClick={() => setIsCameraOpen(!isCameraOpen)}>
+                      <Camera className="h-4 w-4 mr-1" />
+                      {isCameraOpen ? "Xidh Kamarada" : "Daar Kamarada!"}
+                   </Button>
+                 </div>
               </label>
 
               {isCameraOpen ? (
                  <div className="mb-2 w-full flex justify-center">
                    <BarcodeScannerCamera 
                       onScan={(decodedText) => {
-                         setFormData({...formData, sku: decodedText});
+                         setFormData({...formData, barcode: decodedText});
                          setIsCameraOpen(false);
                          toast.success(lang === 'en' ? "Barcode Captured!" : "Barcode waa lasoo qabtay!");
                       }} 
@@ -445,11 +476,11 @@ export default function InventoryPage() {
                  </div>
               ) : (
                 <Input 
-                  name="sku"
-                  placeholder="Scan Barcode or Type PRD-005"
+                  name="barcode"
+                  placeholder="Scan Barcode or Type Code"
                   className="bg-[#f9f9fb] h-11 border-zinc-200 text-[#141b2d] uppercase"
-                  value={formData.sku}
-                  onChange={(e) => setFormData({...formData, sku: e.target.value})}
+                  value={formData.barcode}
+                  onChange={(e) => setFormData({...formData, barcode: e.target.value})}
                 />
               )}
             </div>
@@ -543,19 +574,43 @@ export default function InventoryPage() {
               />
             </div>
             <div className="grid gap-2">
+              <label className="text-sm font-bold text-zinc-600">{t('sku')}</label>
+              <Input 
+                className="bg-[#f9f9fb] h-11 border-zinc-200 text-[#141b2d] uppercase"
+                value={formData.sku}
+                onChange={(e) => setFormData({...formData, sku: e.target.value})}
+              />
+            </div>
+            <div className="grid gap-2">
               <label className="text-sm font-bold text-zinc-600 flex justify-between items-center">
-                 <span>{t('sku')}</span>
-                 <Button type="button" variant="ghost" size="sm" className="h-6 px-2 text-zinc-500 hover:text-blue-600" onClick={() => setIsCameraOpen(!isCameraOpen)}>
-                    <Camera className="h-4 w-4 mr-1" />
-                    {isCameraOpen ? "Xidh Kamarada" : "Daar Kamarada!"}
-                 </Button>
+                 <span>Barcode</span>
+                 <div className="flex space-x-2">
+                   <Button 
+                      type="button" 
+                      variant="ghost" 
+                      size="sm" 
+                      className="h-6 px-2 text-zinc-500 hover:text-blue-600 font-bold" 
+                      onClick={() => {
+                        const existing = inventory.map(p => p.barcode || '');
+                        const newCode = generateEAN13(existing);
+                        setFormData(prev => ({ ...prev, barcode: newCode }));
+                        toast.success(lang === 'en' ? `Generated Barcode: ${newCode}` : `Barcode cusub ayaa la sameeyay: ${newCode}`);
+                      }}
+                   >
+                      💡 Generate
+                   </Button>
+                   <Button type="button" variant="ghost" size="sm" className="h-6 px-2 text-zinc-500 hover:text-blue-600 font-bold" onClick={() => setIsCameraOpen(!isCameraOpen)}>
+                      <Camera className="h-4 w-4 mr-1" />
+                      {isCameraOpen ? "Xidh Kamarada" : "Daar Kamarada!"}
+                   </Button>
+                 </div>
               </label>
 
               {isCameraOpen ? (
                  <div className="mb-2 w-full flex justify-center">
                    <BarcodeScannerCamera 
                       onScan={(decodedText) => {
-                         setFormData({...formData, sku: decodedText});
+                         setFormData({...formData, barcode: decodedText});
                          setIsCameraOpen(false);
                          toast.success(lang === 'en' ? "Barcode Captured!" : "Barcode waa lasoo qabtay!");
                       }} 
@@ -565,9 +620,9 @@ export default function InventoryPage() {
                  </div>
               ) : (
                 <Input 
-                   className="bg-[#f9f9fb] h-11 border-zinc-200 text-[#141b2d] uppercase"
-                   value={formData.sku}
-                   onChange={(e) => setFormData({...formData, sku: e.target.value})}
+                  className="bg-[#f9f9fb] h-11 border-zinc-200 text-[#141b2d] uppercase"
+                  value={formData.barcode}
+                  onChange={(e) => setFormData({...formData, barcode: e.target.value})}
                 />
               )}
             </div>

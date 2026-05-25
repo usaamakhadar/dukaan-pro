@@ -1,9 +1,9 @@
-import { Inter } from "next/font/google";
+// Using standard system fonts instead of next/font/google to support restricted build environments
+const interFontFamily = "ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji'";
+
 import "./globals.css";
 import { Toaster } from "@/components/ui/sonner";
 import type { Metadata } from "next";
-
-const inter = Inter({ subsets: ["latin"] });
 
 import { LanguageProvider } from "@/lib/i18n";
 
@@ -33,7 +33,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className={`${inter.className} min-h-[100dvh] bg-white text-zinc-900 antialiased`}>
+      <body style={{ fontFamily: interFontFamily }} className="min-h-[100dvh] bg-white text-zinc-900 antialiased">
         <LanguageProvider>
           {children}
           <Toaster />

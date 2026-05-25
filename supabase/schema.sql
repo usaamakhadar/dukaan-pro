@@ -122,6 +122,10 @@ CREATE TABLE products (
     updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
+-- Index for unique barcodes per tenant (ignores null/empty)
+CREATE UNIQUE INDEX idx_products_tenant_barcode ON products (tenant_id, barcode) WHERE barcode IS NOT NULL AND barcode <> '';
+
+
 -- 4B. PURCHASES (Purchase Orders to Suppliers)
 CREATE TABLE purchases (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
