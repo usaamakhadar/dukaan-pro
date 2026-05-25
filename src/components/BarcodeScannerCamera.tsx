@@ -15,10 +15,20 @@ export default function BarcodeScannerCamera({ onScan, onClose, title = "Scan Ba
   const [cameras, setCameras] = useState<any[]>([]);
   const [currentCamIdx, setCurrentCamIdx] = useState(0);
   const scannerRef = useRef<Html5Qrcode | null>(null);
-
+  const lastScannedCodeRef = useRef<string>("");
+  const lastScanTimeRef = useRef<number>(0);
   useEffect(() => {
     const html5QrCode = new Html5Qrcode("html5-qr-reader", {
       verbose: false,
+      formatsToSupport: [
+        Html5QrcodeSupportedFormats.EAN_13,
+        Html5QrcodeSupportedFormats.EAN_8,
+        Html5QrcodeSupportedFormats.UPC_A,
+        Html5QrcodeSupportedFormats.UPC_E,
+        Html5QrcodeSupportedFormats.CODE_128,
+        Html5QrcodeSupportedFormats.CODE_39,
+        Html5QrcodeSupportedFormats.QR_CODE
+      ],
       experimentalFeatures: {
         useBarCodeDetectorIfSupported: true
       }
@@ -73,8 +83,21 @@ export default function BarcodeScannerCamera({ onScan, onClose, title = "Scan Ba
   };
 
   const initStart = (cameraIdOrObj: any, instance: Html5Qrcode) => {
+    // Construct camera constraints to force High Definition (720p/1080p)
+    const constraints = typeof cameraIdOrObj === 'string'
+      ? {
+          deviceId: { exact: cameraIdOrObj },
+          width: { min: 640, ideal: 1280, max: 1920 },
+          height: { min: 480, ideal: 720, max: 1080 }
+        }
+      : {
+          facingMode: "environment",
+          width: { min: 640, ideal: 1280, max: 1920 },
+          height: { min: 480, ideal: 720, max: 1080 }
+        };
+
     instance.start(
-      cameraIdOrObj,
+      constraints,
       { 
         fps: 30, 
         qrbox: (width, height) => {
@@ -86,12 +109,34 @@ export default function BarcodeScannerCamera({ onScan, onClose, title = "Scan Ba
         aspectRatio: 1.7777778
       },
       (decodedText) => {
-        instance.stop().then(() => {
+         const now = Date.now();
+         const cleanCode = decodedText.trim();
+         
+         if (cleanCode !== lastScannedCodeRef.current || (now - lastScanTimeRef.current) > 2000) {
+            lastScannedCodeRef.current = cleanCode;
+            lastScanTimeRef.current = now;
+            
+            try {
+               const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
+               if (AudioContextClass) {
+                  const audioCtx = new AudioContextClass();
+                  const osc = audioCtx.createOscillator();
+                  const gain = audioCtx.createGain();
+                  osc.type = "sine";
+                  osc.frequency.setValueAtTime(950, audioCtx.currentTime);
+                  gain.gain.setValueAtTime(0.08, audioCtx.currentTime);
+                  gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.12);
+                  osc.connect(gain);
+                  gain.connect(audioCtx.destination);
+                  osc.start();
+                  osc.stop(audioCtx.currentTime + 0.12);
+               }
+            } catch (e) {
+               console.error("Beep audio failed to play:", e);
+            }
+            
             onScan(decodedText);
-        }).catch(err => {
-            onScan(decodedText);
-            console.error(err);
-        });
+         }
       },
       (errorMessage) => { /* ignore */ }
     ).catch(err => {
@@ -129,7 +174,7 @@ export default function BarcodeScannerCamera({ onScan, onClose, title = "Scan Ba
       {/* The scanner element */}
       <div className="relative w-full max-w-md bg-black rounded-xl overflow-hidden min-h-[250px] md:min-h-[300px]">
          {!isError && <span className="text-zinc-500 animate-pulse font-bold text-sm absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-0">Waa la furaayaa Kamarada...</span>}
-         <div id="html5-qr-reader" className="absolute top-0 left-0 w-full h-full [&>video]:absolute [&>video]:top-0 [&>video]:left-0 [&>video]:w-full [&>video]:h-full [&>video]:object-cover [&>canvas]:absolute [&>canvas]:top-0 [&>canvas]:left-0 [&>canvas]:w-full [&>canvas]:h-full z-10" />
+         <div id="html5-qr-reader" className="absolute top-0 left-0 w-full h-full [&>video]:absolute [&>video]:top-0 [&>video]:left-0 [&>video]:w-full [&>video]:h-full [&>video]:object-contain [&>canvas]:absolute [&>canvas]:top-0 [&>canvas]:left-0 [&>canvas]:w-full [&>canvas]:h-full z-10" />
       </div>
       
       <div className="flex items-center justify-between w-full mt-4 max-w-md">

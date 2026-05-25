@@ -25,6 +25,11 @@ export default function SettingsPage() {
   const [taxRate, setTaxRate] = useState("0");
   const [serviceFee, setServiceFee] = useState("0");
   const [exchangeRate, setExchangeRate] = useState("8500");
+  const [zaadNumber, setZaadNumber] = useState("");
+  const [edahabNumber, setEdahabNumber] = useState("");
+  const [storePhone1, setStorePhone1] = useState("");
+  const [storePhone2, setStorePhone2] = useState("");
+  const [storePhone3, setStorePhone3] = useState("");
 
   useEffect(() => {
     fetchSettings();
@@ -61,9 +66,19 @@ export default function SettingsPage() {
             const footerData = JSON.parse(settingsData.receipt_footer || "{}");
             setSupportEmail(footerData.email || "");
             setServiceFee(footerData.fee || "0");
+            setZaadNumber(footerData.zaad || "");
+            setEdahabNumber(footerData.edahab || "");
+            setStorePhone1(footerData.phone1 || "");
+            setStorePhone2(footerData.phone2 || "");
+            setStorePhone3(footerData.phone3 || "");
          } catch {
             setSupportEmail("");
             setServiceFee("0");
+            setZaadNumber("");
+            setEdahabNumber("");
+            setStorePhone1("");
+            setStorePhone2("");
+            setStorePhone3("");
          }
       }
     }
@@ -87,7 +102,15 @@ export default function SettingsPage() {
     }
 
     // 2. Update tenant_settings
-    const footerPayload = JSON.stringify({ email: supportEmail, fee: serviceFee });
+    const footerPayload = JSON.stringify({ 
+        email: supportEmail, 
+        fee: serviceFee,
+        zaad: zaadNumber,
+        edahab: edahabNumber,
+        phone1: storePhone1,
+        phone2: storePhone2,
+        phone3: storePhone3
+    });
     const { error: sError } = await supabase
        .from('tenant_settings')
        .update({ 
@@ -162,6 +185,32 @@ export default function SettingsPage() {
                     <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest px-2">{lang === 'en' ? 'Receipt Address (Location)' : 'Cinwaanka Dukaanka'}</label>
                     <Input value={receiptAddress} onChange={(e) => setReceiptAddress(e.target.value)} placeholder="e.g. 123 Main St, Mogadishu" className="bg-[#f9f9fb] border-none h-14 rounded-2xl px-6 text-[#141b2d] font-bold focus:ring-2 focus:ring-[#141b2d]/5" />
                     <p className="text-[10px] text-zinc-400 font-medium px-2 mt-1 italic opacity-70">This will appear at the header of your printed receipts.</p>
+                 </div>
+                 {/* Numbers for Receipt Section */}
+                 <div className="md:col-span-2 border-t border-zinc-100 pt-6 mt-4">
+                    <h3 className="text-lg font-black text-[#141b2d] uppercase mb-4 px-2">{lang === 'en' ? 'Receipt Payment & Contact Numbers' : 'Nambarrada Rasiidhka (Taleefannada & Lacagaha)'}</h3>
+                    <div className="grid gap-6 md:grid-cols-2">
+                       <div className="space-y-2">
+                          <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest px-2">ZAAD Number</label>
+                          <Input value={zaadNumber} onChange={(e) => setZaadNumber(e.target.value)} placeholder="e.g. 063XXXXXX" className="bg-[#f9f9fb] border-none h-14 rounded-2xl px-6 text-[#141b2d] font-bold focus:ring-2 focus:ring-[#141b2d]/5" />
+                       </div>
+                       <div className="space-y-2">
+                          <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest px-2">eDahab Number</label>
+                          <Input value={edahabNumber} onChange={(e) => setEdahabNumber(e.target.value)} placeholder="e.g. 065XXXXXX" className="bg-[#f9f9fb] border-none h-14 rounded-2xl px-6 text-[#141b2d] font-bold focus:ring-2 focus:ring-[#141b2d]/5" />
+                       </div>
+                       <div className="space-y-2">
+                          <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest px-2">{lang === 'en' ? 'Phone Number 1' : 'Taleefanka 1-aad'}</label>
+                          <Input value={storePhone1} onChange={(e) => setStorePhone1(e.target.value)} placeholder="e.g. +25261XXXXXX" className="bg-[#f9f9fb] border-none h-14 rounded-2xl px-6 text-[#141b2d] font-bold focus:ring-2 focus:ring-[#141b2d]/5" />
+                       </div>
+                       <div className="space-y-2">
+                          <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest px-2">{lang === 'en' ? 'Phone Number 2 (Optional)' : 'Taleefanka 2-aad (Ikhtiyaari)'}</label>
+                          <Input value={storePhone2} onChange={(e) => setStorePhone2(e.target.value)} placeholder="e.g. +25262XXXXXX" className="bg-[#f9f9fb] border-none h-14 rounded-2xl px-6 text-[#141b2d] font-bold focus:ring-2 focus:ring-[#141b2d]/5" />
+                       </div>
+                       <div className="space-y-2 md:col-span-2">
+                          <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest px-2">{lang === 'en' ? 'Phone Number 3 (Optional)' : 'Taleefanka 3-aad (Ikhtiyaari)'}</label>
+                          <Input value={storePhone3} onChange={(e) => setStorePhone3(e.target.value)} placeholder="e.g. +25269XXXXXX" className="bg-[#f9f9fb] border-none h-14 rounded-2xl px-6 text-[#141b2d] font-bold focus:ring-2 focus:ring-[#141b2d]/5" />
+                       </div>
+                    </div>
                  </div>
               </div>
             </Card>

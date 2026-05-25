@@ -1146,11 +1146,59 @@ export default function POSPage() {
 
                   {/* Footer Message */}
                   <div className="text-center space-y-1">
-                     {tenantSettings?.receipt_footer ? (
-                        <p className="italic text-[10px] font-bold whitespace-pre-wrap">{tenantSettings.receipt_footer}</p>
-                     ) : (
-                        <p className="italic text-[10px] font-bold">Hubso Alaabtaada intaanad bixin</p>
-                     )}
+                      {(() => {
+                         if (!tenantSettings?.receipt_footer) {
+                            return <p className="italic text-[10px] font-bold">Hubso Alaabtaada intaanad bixin</p>;
+                         }
+                         try {
+                            const parsedFooter = JSON.parse(tenantSettings.receipt_footer);
+                            const hasPayments = parsedFooter.zaad || parsedFooter.edahab;
+                            const hasPhones = parsedFooter.phone1 || parsedFooter.phone2 || parsedFooter.phone3;
+                            
+                            return (
+                               <div className="space-y-2 mt-2 pt-2 border-t border-dashed border-zinc-300 text-center w-full">
+                                  {parsedFooter.email && (
+                                     <p className="text-[9px] font-semibold text-zinc-600">Email: {parsedFooter.email}</p>
+                                  )}
+                                  
+                                  {hasPayments && (
+                                     <div className="bg-zinc-50 border border-zinc-200 rounded-lg p-1.5 space-y-0.5 text-[9px] font-bold text-left">
+                                        <div className="text-center text-[8px] font-black uppercase text-zinc-400 border-b border-zinc-200/60 pb-0.5 mb-1">
+                                           {lang === 'en' ? 'Mobile Payment Accounts' : 'Xisaabaadka Lacagaha'}
+                                        </div>
+                                        {parsedFooter.zaad && (
+                                           <div className="flex justify-between">
+                                              <span className="text-emerald-700 font-extrabold">ZAAD:</span>
+                                              <span className="font-mono text-zinc-800">{parsedFooter.zaad}</span>
+                                           </div>
+                                        )}
+                                        {parsedFooter.edahab && (
+                                           <div className="flex justify-between">
+                                              <span className="text-amber-700 font-extrabold">eDahab:</span>
+                                              <span className="font-mono text-zinc-800">{parsedFooter.edahab}</span>
+                                           </div>
+                                        )}
+                                     </div>
+                                  )}
+                                  
+                                  {hasPhones && (
+                                     <div className="space-y-0.5 text-[9px] text-zinc-600 font-semibold">
+                                        <p className="text-[8px] font-black uppercase text-zinc-400 tracking-wider">
+                                           {lang === 'en' ? 'Contact Us / La Xidhiidh' : 'Wixii Su\'aal Ah La Xidhiidh'}
+                                        </p>
+                                        <div className="flex flex-wrap justify-center gap-x-2 gap-y-0.5 font-mono font-bold text-zinc-800">
+                                           {parsedFooter.phone1 && <span>{parsedFooter.phone1}</span>}
+                                           {parsedFooter.phone2 && <span>• {parsedFooter.phone2}</span>}
+                                           {parsedFooter.phone3 && <span>• {parsedFooter.phone3}</span>}
+                                        </div>
+                                     </div>
+                                  )}
+                               </div>
+                            );
+                         } catch (e) {
+                            return <p className="italic text-[10px] font-bold whitespace-pre-wrap">{tenantSettings.receipt_footer}</p>;
+                         }
+                      })()}
                      
                      {/* Dynamic Barcode Placeholder */}
                      <div className="flex flex-col items-center pt-2">
