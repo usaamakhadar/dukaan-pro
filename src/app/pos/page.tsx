@@ -1081,34 +1081,62 @@ export default function POSPage() {
        {showReceipt && lastSaleData && (
          <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 overflow-y-auto">
             <div className="bg-white text-[#141b2d] w-full max-w-[340px] shadow-2xl relative overflow-hidden font-mono text-[12px] border border-zinc-200 m-auto mx-auto my-12 flex flex-col max-h-[90vh]">
-               {/* Success Banner (UI only) */}
-               <div className="bg-green-600 text-white text-center py-2 text-[10px] font-bold uppercase tracking-widest shrink-0 relative flex justify-center items-center">
-                  <span>{lang === 'en' ? 'Transaction Success' : 'Iibku waa xarooday'}</span>
-                  <button 
-                     onClick={() => setShowReceipt(false)} 
-                     className="absolute right-2 text-white hover:text-red-200 font-extrabold text-[10px] p-1 px-2.5 bg-black/25 rounded transition-colors"
-                  >
-                     ✕ {lang === 'en' ? 'Close' : 'Xidh'}
-                  </button>
-               </div>
+                {/* Success Banner (UI only) */}
+                <div className="bg-green-600 text-white text-center py-2 text-[10px] font-bold uppercase tracking-widest shrink-0 relative flex justify-center items-center">
+                   <span>{lang === 'en' ? 'Transaction Success' : 'Iibku waa xarooday'}</span>
+                   <button 
+                      onClick={() => setShowReceipt(false)} 
+                      className="absolute right-2 text-white hover:text-red-200 font-extrabold text-[10px] p-1 px-2.5 bg-black/25 rounded transition-colors"
+                   >
+                      ✕ {lang === 'en' ? 'Close' : 'Xidh'}
+                   </button>
+                </div>
 
-                <div id="receipt-print-area" className="p-5 overflow-y-auto custom-scrollbar bg-white print-target">
+                <div id="receipt-print-area" className="p-5 overflow-y-auto custom-scrollbar bg-white print-target flex-1">
                   {/* Thermal Header */}
-                  <div className="text-center space-y-0.5 mb-4">
-                     <p className="font-bold text-[10px] uppercase">Sales Receipt #{lastSaleData.id.slice(0, 8).toUpperCase()}</p>
-                     <div className="flex justify-between text-[10px] border-b border-zinc-100 pb-1 mb-1 font-bold">
-                        <span>{lastSaleData.date.split(',')[0]}</span>
-                        <span>{lastSaleData.date.split(',')[1]}</span>
+                  <div className="text-center space-y-1 mb-4">
+                     <div className="flex justify-between text-[9px] border-b border-zinc-200 pb-0.5 mb-0.5 font-mono font-bold">
+                        <span>{lastSaleData.date}</span>
+                        <span>Sales Receipt #{lastSaleData.id.slice(0, 8).toUpperCase()}</span>
                      </div>
-                     <h2 className="text-lg font-black uppercase leading-tight mt-1">{storeName || "MY STORE"}</h2>
-                     {tenantSettings?.receipt_header ? (
+                     <div className="flex justify-between text-[9px] border-b border-black pb-1 mb-2 font-mono font-bold">
+                        <span>Store: {storeName || "DKN"}</span>
+                        <span>Cashier: {userName || "Cashier"}</span>
+                     </div>
+
+                     <h2 className="text-sm font-black uppercase leading-tight mt-1">{storeName || "MY STORE"}</h2>
+                     {tenantSettings?.receipt_header && (
                         <p className="text-[10px] font-medium leading-tight whitespace-pre-wrap">{tenantSettings.receipt_header}</p>
-                     ) : (
-                        <>
-                           <p className="text-[10px] font-medium leading-tight">Mogadishu, Somalia</p>
-                           <p className="text-[10px] font-medium">Tel: Update in Settings</p>
-                        </>
                      )}
+
+                     {(() => {
+                        if (!tenantSettings?.receipt_footer) return null;
+                        try {
+                           const parsedFooter = JSON.parse(tenantSettings.receipt_footer);
+                           const hasPhones = parsedFooter.phone1 || parsedFooter.phone2 || parsedFooter.phone3;
+                           const hasPayments = parsedFooter.zaad || parsedFooter.edahab;
+                           
+                           return (
+                              <div className="text-[9px] font-bold leading-tight font-mono space-y-0.5 mt-1">
+                                 {hasPhones && (
+                                    <p>
+                                       Tel: {[parsedFooter.phone1, parsedFooter.phone2, parsedFooter.phone3].filter(Boolean).join(" | ")}
+                                    </p>
+                                 )}
+                                 {hasPayments && (
+                                    <p>
+                                       {[
+                                          parsedFooter.zaad ? `ZAAD: ${parsedFooter.zaad}` : null,
+                                          parsedFooter.edahab ? `E-Dahab : ${parsedFooter.edahab}` : null
+                                       ].filter(Boolean).join(" // ")}
+                                    </p>
+                                 )}
+                              </div>
+                           );
+                        } catch (e) {
+                           return null;
+                        }
+                     })()}
                   </div>
 
                   {/* Table Header */}
