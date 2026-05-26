@@ -162,3 +162,63 @@
     animation: flash-green 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
   }
 }
+
+/* ==========================================================================
+   THERMAL PRINTER STYLES (58mm / 80mm)
+   ========================================================================== */
+@media print {
+  @page {
+    margin: 0;
+    /* Thermal printers usually handle length dynamically, but we ensure no extra margins */
+    size: auto; 
+  }
+
+  body {
+    margin: 0 !important;
+    padding: 0 !important;
+    background-color: white !important;
+    -webkit-print-color-adjust: exact !important;
+    color-adjust: exact !important;
+  }
+
+  /* Hide everything on the page by default */
+  body * {
+    visibility: hidden;
+  }
+
+  /* ONLY show elements with .print-target and their children */
+  .print-target, .print-target * {
+    visibility: visible;
+  }
+
+  /* Position the receipt at the absolute top-left for the printer */
+  .print-target {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%; /* The printer driver will limit this to 58mm or 80mm */
+    max-width: 80mm; /* Max width to ensure it doesn't overflow 80mm printers */
+    padding: 2mm !important;
+    margin: 0 !important;
+    box-shadow: none !important;
+    border: none !important;
+    color: black !important;
+  }
+
+  /* Remove scrollbars and borders */
+  .custom-scrollbar {
+    overflow: visible !important;
+  }
+
+  /* Force clean black and white text */
+  * {
+    color: #000 !important;
+    background: transparent !important;
+    text-shadow: none !important;
+  }
+
+  /* Prevent page breaks inside items */
+  .print-break-inside-avoid {
+    page-break-inside: avoid;
+  }
+}

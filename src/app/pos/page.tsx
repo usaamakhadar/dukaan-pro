@@ -351,79 +351,37 @@ export default function POSPage() {
     toast.loading(lang === 'en' ? "Processing sale..." : `Lacagta waa la xaraynayaa (${paymentMethod})...`);
 
     try {
-      // 1. Create Sale Record
-      const { data: saleData, error: saleError } = await supabase.from('sales').insert([{
-        tenant_id: tenantId,
-        cashier_id: cashierId,
-        customer_id: selectedCustomer && selectedCustomer.id !== 'guest' ? selectedCustomer.id : null,
-        subtotal: subtotal,
-        discount: 0,
-        tax: vatAmount,
-        total_amount: total,
-        payment_method: paymentMethod === 'deyn' ? 'credit' : paymentMethod,
-        status: paymentMethod === 'deyn' ? 'debt' : 'completed'
-      }]).select().single();
-
-      if (saleError) throw saleError;
-
-      // 2. Create Sale Items & Reduce Stock
-      const saleItems = cart.map(item => ({
-        tenant_id: tenantId,
-        sale_id: saleData.id,
+      // 1. Prepare items payload
+      const itemsPayload = cart.map(item => ({
         product_id: item.id,
         quantity: item.qty,
         unit_price: item.price,
         total_price: item.price * item.qty
       }));
 
-      const { error: itemsError } = await supabase.from('sale_items').insert(saleItems);
-      if (itemsError) throw itemsError;
+      // 2. Call the Atomic RPC to process the entire transaction safely
+      const { data: newSaleId, error: rpcError } = await supabase.rpc('process_pos_checkout', {
+        p_tenant_id: tenantId,
+        p_cashier_id: cashierId,
+        p_customer_id: selectedCustomer && selectedCustomer.id !== 'guest' ? selectedCustomer.id : null,
+        p_subtotal: subtotal,
+        p_tax: vatAmount,
+        p_discount: 0,
+        p_total_amount: total,
+        p_payment_method: paymentMethod === 'deyn' ? 'credit' : paymentMethod,
+        p_status: paymentMethod === 'deyn' ? 'debt' : 'completed',
+        p_items: itemsPayload
+      });
 
-      // 3. Deduct Stock (with atomic conditional check-and-update to prevent race conditions)
-      for (const item of cart) {
-        const { data: dbProd, error: prodErr } = await supabase
-          .from('products')
-          .select('stock, name')
-          .eq('id', item.id)
-          .single();
-
-        if (prodErr || !dbProd) {
-          throw new Error(lang === 'en' ? `Product ${item.name} not found!` : `Badeecada ${item.name} lama helin!`);
-        }
-
-        if (dbProd.stock < item.qty) {
-          throw new Error(lang === 'en' 
-            ? `Insufficient stock for ${item.name}! Available: ${dbProd.stock}` 
-            : `Kayd ku filan ma laha ${item.name}! Inta ku hartay: ${dbProd.stock}`
-          );
-        }
-
-        const newStock = dbProd.stock - item.qty;
-        
-        // Optimistic Concurrency Control (Compare-And-Swap) using WHERE clause constraint
-        const { data: updatedData, error: updateErr } = await supabase
-          .from('products')
-          .update({ stock: newStock })
-          .eq('id', item.id)
-          .gte('stock', item.qty)
-          .select();
-
-        if (updateErr) throw updateErr;
-
-        if (!updatedData || updatedData.length === 0) {
-          throw new Error(lang === 'en'
-            ? `Stock for ${item.name} was changed by another cashier! Please refresh and try again.`
-            : `Kaydka alaabta ${item.name} waxaa wax ka beddelay khasnaji kale! Fadlan cusboonaysii (Refresh) oo isku day mar kale.`
-          );
-        }
+      if (rpcError) {
+         // Friendly error mapping for stock issues raised by the database
+         if (rpcError.message.includes("Insufficient stock")) {
+            throw new Error(lang === 'en' ? "Insufficient stock for one or more items!" : "Kaydka alaabta qaar kuma filna!");
+         }
+         throw new Error(rpcError.message || "Failed to process checkout securely.");
       }
-
-      // 4. Update Customer Wallet if Debt
-      if (paymentMethod === 'deyn' && selectedCustomer) {
-        const currentBal = parseFloat(selectedCustomer.wallet_balance || "0");
-        const newBal = currentBal - total; // Negative balance implies debt owed to store
-        await supabase.from('customers').update({ wallet_balance: newBal }).eq('id', selectedCustomer.id);
-      }
+      
+      const saleData = { id: newSaleId };
 
       // 5. Prepare Receipt Data BEFORE clearing state
       const receiptDetails = {
