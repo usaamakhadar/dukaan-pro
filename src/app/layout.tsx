@@ -45,6 +45,11 @@ export default function RootLayout({
                     navigator.serviceWorker.register('/sw.js');
                   });
                 }
+                
+                // Prevent iOS Safari pinch-to-zoom
+                document.addEventListener('gesturestart', function(e) {
+                  e.preventDefault();
+                });
               `,
             }}
           />
