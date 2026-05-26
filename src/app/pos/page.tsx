@@ -478,7 +478,7 @@ export default function POSPage() {
           }
           
           /* Collapse height of all layout containers to prevent extra pages */
-          html, body, #__next, main, [data-radix-portal], .flex-1, .flex {
+          html, body, #__next, main, [data-radix-portal], .flex-1 {
             height: 0 !important;
             min-height: 0 !important;
             margin: 0 !important;
