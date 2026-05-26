@@ -797,17 +797,17 @@ export default function POSPage() {
 
                     {/* IN-CART COUNTER OVERLAY */}
                     {inCart && (
-                      <div className="absolute inset-0 bg-white/80 backdrop-blur-sm z-20 flex flex-col items-center justify-center animate-in fade-in duration-200">
-                        <div className="bg-[#141b2d] text-white rounded-full flex items-center shadow-2xl p-1.5 px-4 space-x-6">
-                           <button onClick={(e) => { e.stopPropagation(); updateQty(p.id, -1); }} className="hover:text-blue-400 p-2 transition-colors active:scale-90">
-                              {inCart.qty === 1 ? <Trash2 className="h-5 w-5" /> : <Minus className="h-5 w-5" />}
+                      <div className="absolute inset-0 bg-white/80 backdrop-blur-sm z-20 flex flex-col items-center justify-center p-2 text-center animate-in fade-in duration-200">
+                        <div className="bg-[#141b2d] text-white rounded-full flex items-center shadow-2xl p-1 sm:p-1.5 px-2 sm:px-4 space-x-2 sm:space-x-4">
+                           <button onClick={(e) => { e.stopPropagation(); updateQty(p.id, -1); }} className="hover:text-blue-400 p-1 sm:p-1.5 transition-colors active:scale-90">
+                              {inCart.qty === 1 ? <Trash2 className="h-4 w-4 sm:h-5 sm:w-5" /> : <Minus className="h-4 w-4 sm:h-5 sm:w-5" />}
                            </button>
-                           <span className="text-2xl font-black">{inCart.qty}</span>
-                           <button onClick={(e) => { e.stopPropagation(); updateQty(p.id, 1); }} className="hover:text-blue-400 p-2 transition-colors active:scale-90">
-                              <Plus className="h-5 w-5" />
+                           <span className="text-lg sm:text-2xl font-black">{inCart.qty}</span>
+                           <button onClick={(e) => { e.stopPropagation(); updateQty(p.id, 1); }} className="hover:text-blue-400 p-1 sm:p-1.5 transition-colors active:scale-90">
+                              <Plus className="h-4 w-4 sm:h-5 sm:w-5" />
                            </button>
                         </div>
-                        <span className="mt-4 font-bold text-[#141b2d] text-sm bg-white px-3 py-1 rounded-full shadow-sm">
+                        <span className="mt-2 sm:mt-4 font-bold text-[#141b2d] text-xs sm:text-sm bg-white px-2 sm:px-3 py-1 rounded-full shadow-sm">
                            Total: ${(inCart.price * inCart.qty).toFixed(2)}
                         </span>
                       </div>
