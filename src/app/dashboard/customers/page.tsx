@@ -34,6 +34,15 @@ const PrintPageStyles = () => (
         margin: 0;
         size: 80mm;
       }
+      /* Collapse height of all layout containers to prevent extra pages */
+      html, body, #__next, main, [data-radix-portal], .flex-1, .flex {
+        height: 0 !important;
+        min-height: 0 !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        overflow: visible !important;
+        background: white !important;
+      }
       /* Hide Radix portals, dialog overlays, wrappers, and fixed layouts to prevent blank pages */
       [data-radix-portal],
       div[role="dialog"],
@@ -53,10 +62,14 @@ const PrintPageStyles = () => (
          left: 0 !important; 
          top: 0 !important;
          width: 80mm !important;
+         height: auto !important;
+         min-height: auto !important;
+         margin: 0 !important;
+         padding: 8px !important;
          box-shadow: none !important; 
          border: none !important; 
          background: white !important;
-         display: flex !important;
+         display: block !important;
       }
     }
   `}} />
@@ -292,92 +305,92 @@ export default function CustomersPage() {
       
       {/* --- PROFESSIONAL PRINT VIEW (Statement) --- */}
       {selectedCustomer && (
-        <div ref={statementRef} className="absolute top-[-9999px] left-[-9999px] print-target w-[80mm] bg-white text-black p-4 text-[12px] leading-tight font-mono flex flex-col items-center justify-start">
-          <div className="w-full max-w-[340px] bg-white">
-             <div className="text-center mb-2">
-                <p className="text-[10px] font-bold uppercase tracking-widest">Debt Statement #{selectedCustomer.id.slice(0,6).toUpperCase()}</p>
+        <div ref={statementRef} className="absolute top-[-9999px] left-[-9999px] print-target w-[80mm] bg-white text-black p-2 text-[9px] leading-tight font-mono flex flex-col items-center justify-start">
+          <div className="w-full bg-white">
+             <div className="text-center mb-1">
+                <p className="text-[8px] font-bold uppercase tracking-widest">Debt Statement #{selectedCustomer.id.slice(0,6).toUpperCase()}</p>
              </div>
-             <div className="flex justify-between text-[10px] mb-4 border-b border-zinc-200 pb-1">
+             <div className="flex justify-between text-[8px] mb-2 border-b border-zinc-200 pb-1">
                 <span>{new Date().toLocaleDateString()}</span>
                 <span>{new Date().toLocaleTimeString()}</span>
              </div>
 
-             <div className="text-center mb-6">
-               <h1 className="text-xl font-black uppercase mb-1">{storeName || "MY STORE"}</h1>
-               {tenantSettings?.receipt_header && (
-                  <p className="text-[10px] font-medium leading-tight whitespace-pre-wrap">{tenantSettings.receipt_header}</p>
-               )}
-               
-               {(() => {
-                  if (!tenantSettings?.receipt_footer) return null;
-                  try {
-                     const parsedFooter = JSON.parse(tenantSettings.receipt_footer);
-                     const hasPhones = parsedFooter.phone1 || parsedFooter.phone2 || parsedFooter.phone3;
-                     const hasPayments = parsedFooter.zaad || parsedFooter.edahab;
-                     
-                     return (
-                        <div className="text-[9px] font-bold leading-tight font-mono space-y-0.5 mt-1">
-                           {hasPhones && (
-                              <p>
-                                 Tel: {[parsedFooter.phone1, parsedFooter.phone2, parsedFooter.phone3].filter(Boolean).join(" | ")}
-                              </p>
-                           )}
-                           {hasPayments && (
-                              <p>
-                                 {[
-                                    parsedFooter.zaad ? `ZAAD: ${parsedFooter.zaad}` : null,
-                                    parsedFooter.edahab ? `E-Dahab : ${parsedFooter.edahab}` : null
-                                 ].filter(Boolean).join(" // ")}
-                              </p>
-                           )}
-                        </div>
-                     );
-                  } catch (e) {
-                     return null;
-                  }
-               })()}
-             </div>
-
-             <div className="border-t border-b border-black py-2 mb-6">
-                <h2 className="text-center text-[13px] font-black uppercase tracking-widest">Warqadda Deynta</h2>
-             </div>
-
-             <div className="space-y-2 mb-8">
-                <div className="flex justify-between items-center border-b border-zinc-100 pb-1">
-                   <span className="font-bold uppercase text-[11px]">Macmiilka:</span>
-                   <span className="font-black uppercase text-[11px]">{selectedCustomer.name}</span>
-                </div>
-                <div className="flex justify-between items-center border-b border-zinc-100 pb-1">
-                   <span className="font-bold uppercase text-[11px]">Taleefanka:</span>
-                   <span className="font-bold text-[11px]">{selectedCustomer.phone || "---"}</span>
-                </div>
+             <div className="text-center mb-3">
+                <h1 className="text-sm font-black uppercase mb-0.5">{storeName || "MY STORE"}</h1>
+                {tenantSettings?.receipt_header && (
+                   <p className="text-[8px] font-medium leading-tight whitespace-pre-wrap">{tenantSettings.receipt_header}</p>
+                )}
                 
-                <div className="border-y border-black mt-4 py-2">
-                   <div className="flex justify-between items-center">
-                      <p className="text-[11px] font-black uppercase">Current Balance (Deyn)</p>
-                      <p className="text-[15px] font-black">${Math.abs(selectedCustomer.wallet_balance).toFixed(2)}</p>
-                   </div>
-                   <div className="flex justify-between items-center mt-2 pt-1 opacity-70">
-                      <p className="text-[10px] font-bold italic">Equivalent (SLSH):</p>
-                      <p className="text-[11px] font-black">{(Math.abs(selectedCustomer.wallet_balance) * exchangeRate).toLocaleString()} SH</p>
-                   </div>
-                </div>
-             </div>
-
-             <div className="text-center mt-4 pt-2 border-t border-dashed border-black">
-                <p className="text-[9px] italic font-bold">*** Mahadsanid / Thank You ***</p>
                 {(() => {
                    if (!tenantSettings?.receipt_footer) return null;
                    try {
                       const parsedFooter = JSON.parse(tenantSettings.receipt_footer);
-                      if (parsedFooter.email) {
-                         return <p className="text-[8px] font-semibold text-zinc-500 mt-1">Email: {parsedFooter.email}</p>;
-                      }
-                   } catch (e) {}
-                   return null;
+                      const hasPhones = parsedFooter.phone1 || parsedFooter.phone2 || parsedFooter.phone3;
+                      const hasPayments = parsedFooter.zaad || parsedFooter.edahab;
+                      
+                      return (
+                         <div className="text-[8px] font-bold leading-tight font-mono space-y-0.5 mt-0.5">
+                            {hasPhones && (
+                               <p>
+                                  Tel: {[parsedFooter.phone1, parsedFooter.phone2, parsedFooter.phone3].filter(Boolean).join(" | ")}
+                               </p>
+                            )}
+                            {hasPayments && (
+                               <p>
+                                  {[
+                                     parsedFooter.zaad ? `ZAAD: ${parsedFooter.zaad}` : null,
+                                     parsedFooter.edahab ? `E-Dahab: ${parsedFooter.edahab}` : null
+                                  ].filter(Boolean).join(" // ")}
+                               </p>
+                            )}
+                         </div>
+                      );
+                   } catch (e) {
+                      return null;
+                   }
                 })()}
-                <p className="text-[8px] font-bold uppercase mt-2 opacity-50">Powered by Dukaan Pro</p>
              </div>
+
+             <div className="border-t border-b border-black py-1 mb-3">
+                 <h2 className="text-center text-[10px] font-black uppercase tracking-widest">Warqadda Deynta</h2>
+              </div>
+
+              <div className="space-y-1 mb-4">
+                 <div className="flex justify-between items-center border-b border-zinc-100 pb-0.5">
+                    <span className="font-bold uppercase text-[9px]">Macmiilka:</span>
+                    <span className="font-black uppercase text-[9px]">{selectedCustomer.name}</span>
+                 </div>
+                 <div className="flex justify-between items-center border-b border-zinc-100 pb-0.5">
+                    <span className="font-bold uppercase text-[9px]">Taleefanka:</span>
+                    <span className="font-bold text-[9px]">{selectedCustomer.phone || "---"}</span>
+                 </div>
+                 
+                 <div className="border-y border-black mt-2 py-1">
+                    <div className="flex justify-between items-center">
+                       <p className="text-[9px] font-black uppercase">Current Balance (Deyn)</p>
+                       <p className="text-[12px] font-black">${Math.abs(selectedCustomer.wallet_balance).toFixed(2)}</p>
+                    </div>
+                    <div className="flex justify-between items-center mt-1 pt-0.5 opacity-70">
+                       <p className="text-[8px] font-bold italic">Equivalent (SLSH):</p>
+                       <p className="text-[9px] font-black">{(Math.abs(selectedCustomer.wallet_balance) * exchangeRate).toLocaleString()} SH</p>
+                    </div>
+                 </div>
+              </div>
+
+              <div className="text-center mt-3 pt-1 border-t border-dashed border-black">
+                 <p className="text-[8px] italic font-bold">*** Mahadsanid / Thank You ***</p>
+                 {(() => {
+                    if (!tenantSettings?.receipt_footer) return null;
+                    try {
+                       const parsedFooter = JSON.parse(tenantSettings.receipt_footer);
+                       if (parsedFooter.email) {
+                          return <p className="text-[7px] font-semibold text-zinc-500 mt-0.5">Email: {parsedFooter.email}</p>;
+                       }
+                    } catch (e) {}
+                    return null;
+                 })()}
+                 <p className="text-[7px] font-bold uppercase mt-1 opacity-50">Powered by Dukaan Pro</p>
+              </div>
           </div>
         </div>
       )}
