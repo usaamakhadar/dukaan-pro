@@ -5,7 +5,8 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { 
   Search, Bell, HelpCircle, LayoutDashboard, ShoppingBag, 
-  Receipt, Users, Settings, PackageOpen, X, Check, Eye, Globe, Wallet, LogOut
+  Receipt, Users, Settings, PackageOpen, X, Check, Eye, Globe, Wallet, LogOut,
+  RefreshCw
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -303,6 +304,12 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
              <button onClick={toggleLang} className="flex items-center text-xs font-bold text-zinc-500 hover:text-blue-600 transition-colors bg-[#eef0f3] px-3 py-1.5 rounded-full">
                <Globe className="h-4 w-4 mr-2" />
                {lang === 'en' ? 'EN' : 'SO'}
+             </button>
+
+             {/* REFRESH SYSTEM */}
+             <button onClick={() => window.location.reload()} className="flex items-center text-xs font-bold text-zinc-500 hover:text-blue-600 transition-colors bg-[#eef0f3] px-3 py-1.5 rounded-full">
+               <RefreshCw className="h-4 w-4 mr-2" />
+               {lang === 'en' ? 'Refresh' : 'Cusboonaysii'}
              </button>
             
             {/* NOTIFICATION DROP-DOWN */}

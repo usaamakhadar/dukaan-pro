@@ -624,10 +624,6 @@ export default function POSPage() {
                <Globe className="h-3.5 w-3.5 md:h-4 md:w-4 md:mr-2" />
                <span className="hidden md:inline">{lang === 'en' ? 'EN' : 'SO'}</span>
              </button>
-             <button onClick={() => window.location.reload()} className="flex items-center text-[10px] md:text-xs font-bold text-zinc-500 hover:text-blue-600 transition-colors bg-[#eef0f3] px-2 md:px-3 py-1.5 rounded-full">
-               <RefreshCw className="h-3.5 w-3.5 md:h-4 md:w-4 md:mr-2" />
-               <span className="hidden md:inline">{lang === 'en' ? 'Refresh' : 'Cusboonaysii'}</span>
-             </button>
             <button className="text-zinc-500 hover:text-zinc-800 transition-colors hidden sm:block font-bold"><Bell className="h-5 w-5" /></button>
             {/* PROFILE EDIT (DIALOG) */}
             <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
@@ -703,11 +699,8 @@ export default function POSPage() {
             </div>
             <div className="flex gap-2">
                <Button 
-                  onClick={async () => {
-                     const loadToast = toast.loading(lang === 'en' ? 'Refreshing products...' : 'Waa la cusboonaysiinayaa alaabta...');
-                     await fetchProducts();
-                     toast.dismiss(loadToast);
-                     toast.success(lang === 'en' ? 'Refreshed! ✅' : 'Waa la cusboonaysiiyay! ✅');
+                  onClick={() => {
+                     window.location.reload();
                   }} 
                   variant="outline" 
                   className="border-zinc-200 text-[#141b2d] bg-white h-12 rounded-xl shadow-sm hover:bg-zinc-50 font-bold"
