@@ -27,6 +27,7 @@ export default function InvoicesPage() {
   const invoiceRef = useRef<HTMLDivElement>(null);
   const [receiptHeight, setReceiptHeight] = useState<string>('auto');
   const [invoiceHeight, setInvoiceHeight] = useState<string>('297mm');
+  const [cashierMap, setCashierMap] = useState<Record<string, string>>({});
 
   useEffect(() => {
     fetchSales();
@@ -59,12 +60,30 @@ export default function InvoicesPage() {
           setTenantSettings(settings);
       }
 
+      // Fetch Cashier mapping view
+      try {
+        const { data: cashierData } = await supabase
+          .from('tenant_cashiers')
+          .select('cashier_id, cashier_name');
+        
+        if (cashierData) {
+          const map: Record<string, string> = {};
+          cashierData.forEach((c: any) => {
+            map[c.cashier_id] = c.cashier_name;
+          });
+          setCashierMap(map);
+        }
+      } catch (err) {
+        console.error("Failed to load cashier mappings:", err);
+      }
+
       // Fetch Sales and deeply nested Items 
       const { data: salesData } = await supabase
         .from('sales')
         .select(`
           id, created_at, subtotal, tax, discount, total_amount, status, payment_method,
           tenant_id,
+          cashier_id,
           customers(name, email),
           sale_items(quantity, unit_price, total_price, products(name))
         `)
@@ -240,12 +259,16 @@ export default function InvoicesPage() {
                  <div className="p-5">
                      {/* Thermal Header */}
                      <div className="text-center space-y-0.5 mb-4">
-                        <p className="font-bold text-[10px] uppercase">Sales Receipt #{selectedSale.id.slice(0, 8).toUpperCase()}</p>
-                        <div className="flex justify-between text-[10px] border-b border-zinc-100 pb-1 mb-1 font-bold">
-                           <span>{new Date(selectedSale.created_at).toLocaleDateString()}</span>
-                           <span>{new Date(selectedSale.created_at).toLocaleTimeString()}</span>
-                        </div>
-                        <h2 className="text-lg font-black uppercase leading-tight mt-1">{storeName || "DKN STORE"}</h2>
+                         <p className="font-bold text-[10px] uppercase">Sales Receipt #{selectedSale.id.slice(0, 8).toUpperCase()}</p>
+                         <div className="flex justify-between text-[10px] border-b border-zinc-100 pb-1 mb-1 font-bold">
+                            <span>{new Date(selectedSale.created_at).toLocaleDateString()}</span>
+                            <span>{new Date(selectedSale.created_at).toLocaleTimeString()}</span>
+                         </div>
+                         <div className="flex justify-between text-[9px] border-b border-zinc-100 pb-1 mb-1 font-bold">
+                            <span>Store: {storeName || "DKN"}</span>
+                            <span>Cashier: {cashierMap[selectedSale.cashier_id] || "Cashier"}</span>
+                         </div>
+                         <h2 className="text-lg font-black uppercase leading-tight mt-1">{storeName || "DKN STORE"}</h2>
                         {tenantSettings?.receipt_header && typeof tenantSettings.receipt_header === 'string' && !tenantSettings.receipt_header.includes('{') ? (
                            <p className="text-[10px] font-medium leading-tight whitespace-pre-wrap">{tenantSettings.receipt_header}</p>
                         ) : (
@@ -299,11 +322,35 @@ export default function InvoicesPage() {
 
                      {/* Footer Message */}
                      <div className="text-center space-y-1">
-                        {tenantSettings?.receipt_footer && typeof tenantSettings.receipt_footer === 'string' && !tenantSettings.receipt_footer.includes('{') ? (
-                           <p className="italic text-[10px] font-bold whitespace-pre-wrap">{tenantSettings.receipt_footer}</p>
-                        ) : (
-                           <p className="italic text-[10px] font-bold">Hubso Alaabtaada intaanad bixin / Thank You</p>
-                        )}
+                        {(() => {
+                            if (!tenantSettings?.receipt_footer) return <p className="italic text-[10px] font-bold">Hubso Alaabtaada intaanad bixin / Thank You</p>;
+                            try {
+                               const parsedFooter = JSON.parse(tenantSettings.receipt_footer);
+                               const hasPhones = parsedFooter.phone1 || parsedFooter.phone2 || parsedFooter.phone3;
+                               const hasPayments = parsedFooter.zaad || parsedFooter.edahab;
+                               
+                               return (
+                                  <div className="text-[9px] font-bold leading-tight font-mono space-y-0.5 mt-1 border-t border-dashed border-zinc-200 pt-2 mb-2">
+                                     {hasPhones && (
+                                        <p>
+                                           Tel: {[parsedFooter.phone1, parsedFooter.phone2, parsedFooter.phone3].filter(Boolean).join(" | ")}
+                                        </p>
+                                     )}
+                                     {hasPayments && (
+                                        <p>
+                                           {[
+                                              parsedFooter.zaad ? `ZAAD: ${parsedFooter.zaad}` : null,
+                                              parsedFooter.edahab ? `E-Dahab: ${parsedFooter.edahab}` : null
+                                           ].filter(Boolean).join(" // ")}
+                                        </p>
+                                     )}
+                                     <p className="italic text-[10px] font-bold mt-2">Hubso Alaabtaada intaanad bixin / Thank You</p>
+                                  </div>
+                               );
+                            } catch (e) {
+                               return <p className="italic text-[10px] font-bold">{tenantSettings.receipt_footer}</p>;
+                            }
+                         })()}
                         
                         {/* Dynamic Barcode Placeholder */}
                         <div className="flex flex-col items-center pt-2">
