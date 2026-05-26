@@ -619,10 +619,14 @@ export default function POSPage() {
               />
             </div>
           </div>
-          <div className="flex items-center space-x-2 md:space-x-6 ml-2 md:ml-0">
+          <div className="flex items-center space-x-2 md:space-x-4 ml-2 md:ml-0">
              <button onClick={toggleLang} className="flex items-center text-[10px] md:text-xs font-bold text-zinc-500 hover:text-blue-600 transition-colors bg-[#eef0f3] px-2 md:px-3 py-1.5 rounded-full">
                <Globe className="h-3.5 w-3.5 md:h-4 md:w-4 md:mr-2" />
                <span className="hidden md:inline">{lang === 'en' ? 'EN' : 'SO'}</span>
+             </button>
+             <button onClick={() => window.location.reload()} className="flex items-center text-[10px] md:text-xs font-bold text-zinc-500 hover:text-blue-600 transition-colors bg-[#eef0f3] px-2 md:px-3 py-1.5 rounded-full">
+               <RefreshCw className="h-3.5 w-3.5 md:h-4 md:w-4 md:mr-2" />
+               <span className="hidden md:inline">{lang === 'en' ? 'Refresh' : 'Cusboonaysii'}</span>
              </button>
             <button className="text-zinc-500 hover:text-zinc-800 transition-colors hidden sm:block font-bold"><Bell className="h-5 w-5" /></button>
             {/* PROFILE EDIT (DIALOG) */}
