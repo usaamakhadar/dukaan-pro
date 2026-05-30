@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Users, Mail, Phone, MapPin, PlusCircle, Trash2, Search, Pencil, Wallet, History, Printer, CreditCard, CheckCircle2 } from "lucide-react";
+import { Users, Mail, Phone, MapPin, PlusCircle, Trash2, Search, Pencil, Wallet, History, Printer, CreditCard, CheckCircle2, FileSpreadsheet } from "lucide-react";
 import { toast } from "sonner";
 import {
   Dialog,
@@ -16,6 +16,7 @@ import {
 
 import { createClient } from "@/lib/supabase/client";
 import { useLanguage } from "@/lib/i18n";
+import CsvImporter from "@/components/CsvImporter";
 
 type Customer = { 
   id: string; 
@@ -85,6 +86,7 @@ export default function CustomersPage() {
   const [tenantSettings, setTenantSettings] = useState<any>(null);
   const [customers, setCustomers] = useState<Customer[]>([]);
   const statementRef = useRef<HTMLDivElement>(null);
+  const [isImportOpen, setIsImportOpen] = useState(false);
   
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [formData, setFormData] = useState({ name: '', email: '', phone: '', address: '' });
@@ -402,13 +404,24 @@ export default function CustomersPage() {
              <h2 className="text-3xl font-bold tracking-tight text-[#141b2d]">{t('customers')}</h2>
              <p className="text-zinc-500 mt-1">Manage your store's customer database.</p>
           </div>
-          <Button 
-             onClick={handleOpenAdd}
-             disabled={isLoading || !tenantId}
-             className="bg-[#141b2d] hover:bg-[#1f2945] text-white rounded-xl shadow-md h-12 px-6 transition-all active:scale-95 disabled:opacity-50"
-          >
-             <PlusCircle className="mr-2 h-5 w-5" /> Add Customer
-          </Button>
+          <div className="flex gap-3">
+            <Button 
+               onClick={() => setIsImportOpen(true)}
+               disabled={isLoading || !tenantId}
+               variant="outline"
+               className="border-zinc-200 text-[#141b2d] bg-white rounded-xl shadow-sm hover:bg-zinc-50 h-12 px-4 font-bold transition-all active:scale-95 disabled:opacity-50"
+            >
+              <FileSpreadsheet className="mr-2 h-5 w-5 text-emerald-600" />
+              {lang === 'en' ? 'Import QuickBooks' : 'Soo Geli QuickBooks'}
+            </Button>
+            <Button 
+               onClick={handleOpenAdd}
+               disabled={isLoading || !tenantId}
+               className="bg-[#141b2d] hover:bg-[#1f2945] text-white rounded-xl shadow-md h-12 px-6 transition-all active:scale-95 disabled:opacity-50"
+            >
+               <PlusCircle className="mr-2 h-5 w-5" /> Add Customer
+            </Button>
+          </div>
         </div>
 
         <div className="bg-white border border-zinc-200 rounded-2xl p-4 shadow-sm flex items-center space-x-4">
@@ -728,6 +741,14 @@ export default function CustomersPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+      <CsvImporter 
+         type="customers"
+         tenantId={tenantId || ''}
+         isOpen={isImportOpen}
+         onClose={() => setIsImportOpen(false)}
+         onComplete={fetchCustomers}
+         lang={lang}
+      />
     </div>
   );
 }

@@ -5,7 +5,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { PlusCircle, Pencil, Trash2, Camera, Search, Image as ImageIcon, Wand2 } from "lucide-react";
+import { PlusCircle, Pencil, Trash2, Camera, Search, Image as ImageIcon, Wand2, FileSpreadsheet } from "lucide-react";
 import { toast } from "sonner";
 import BarcodeScannerCamera from "@/components/BarcodeScannerCamera";
 import {
@@ -18,6 +18,7 @@ import {
 import { useLanguage } from "@/lib/i18n";
 import { createClient } from "@/lib/supabase/client";
 import { generateEAN13 } from "@/lib/barcode/barcode-utils";
+import CsvImporter from "@/components/CsvImporter";
 
 type Product = { 
   id: string; 
@@ -28,6 +29,8 @@ type Product = {
   status: string; 
   barcode?: string; 
   image_url?: string;
+  parent_product_id?: string;
+  breakdown_ratio?: number;
 };
 
 export default function InventoryPage() {
@@ -42,9 +45,10 @@ export default function InventoryPage() {
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [isCameraOpen, setIsCameraOpen] = useState(false);
+  const [isImportOpen, setIsImportOpen] = useState(false);
   
   // Control Forms
-  const [formData, setFormData] = useState({ id: '', sku: '', name: '', price: '', stock: '', image_url: '', barcode: '' });
+  const [formData, setFormData] = useState({ id: '', sku: '', name: '', price: '', stock: '', image_url: '', barcode: '', parent_product_id: '', breakdown_ratio: '' });
   const [searchQuery, setSearchQuery] = useState("");
 
   // Handler for product image upload (with compression)
@@ -138,7 +142,9 @@ export default function InventoryPage() {
           stock: p.stock,
           price: p.price.toString(),
           status: getStatus(p.stock),
-          image_url: p.image_url || ''
+          image_url: p.image_url || '',
+          parent_product_id: p.parent_product_id || '',
+          breakdown_ratio: p.breakdown_ratio || undefined
         })));
       }
     }
@@ -152,7 +158,7 @@ export default function InventoryPage() {
   );
 
   const handleOpenAdd = () => {
-    setFormData({ id: '', sku: '', name: '', price: '', stock: '', image_url: '', barcode: '' });
+    setFormData({ id: '', sku: '', name: '', price: '', stock: '', image_url: '', barcode: '', parent_product_id: '', breakdown_ratio: '' });
     setIsAddOpen(true);
   };
 
@@ -181,6 +187,7 @@ export default function InventoryPage() {
     }
 
     const stockNum = parseInt(formData.stock, 10);
+    const ratioNum = parseInt(formData.breakdown_ratio, 10);
     const productData = {
       tenant_id: tenantId,
       sku: formData.sku.toUpperCase(),
@@ -189,6 +196,8 @@ export default function InventoryPage() {
       price: parseFloat(formData.price || "0"),
       stock: isNaN(stockNum) ? 0 : stockNum,
       image_url: formData.image_url || null,
+      parent_product_id: formData.parent_product_id ? formData.parent_product_id : null,
+      breakdown_ratio: isNaN(ratioNum) ? null : ratioNum
     };
 
     const { data, error } = await supabase.from('products').insert([productData]).select().single();
@@ -207,7 +216,9 @@ export default function InventoryPage() {
         price: data.price.toString(),
         stock: data.stock,
         status: getStatus(data.stock),
-        image_url: data.image_url || ''
+        image_url: data.image_url || '',
+        parent_product_id: data.parent_product_id || '',
+        breakdown_ratio: data.breakdown_ratio || undefined
       }, ...prev]);
     }
     
@@ -223,7 +234,9 @@ export default function InventoryPage() {
       price: product.price, 
       stock: product.stock.toString(),
       image_url: product.image_url || '',
-      barcode: product.barcode || ''
+      barcode: product.barcode || '',
+      parent_product_id: product.parent_product_id || '',
+      breakdown_ratio: product.breakdown_ratio ? product.breakdown_ratio.toString() : ''
     });
     setIsEditOpen(true);
   };
@@ -251,6 +264,7 @@ export default function InventoryPage() {
     }
 
     const stockNum = parseInt(formData.stock, 10);
+    const ratioNum = parseInt(formData.breakdown_ratio, 10);
     
     const { error } = await supabase.from('products')
       .update({
@@ -260,6 +274,8 @@ export default function InventoryPage() {
         price: parseFloat(formData.price || "0"),
         stock: isNaN(stockNum) ? 0 : stockNum,
         image_url: formData.image_url || null,
+        parent_product_id: formData.parent_product_id ? formData.parent_product_id : null,
+        breakdown_ratio: isNaN(ratioNum) ? null : ratioNum
       })
       .eq('id', formData.id);
 
@@ -278,7 +294,9 @@ export default function InventoryPage() {
           price: parseFloat(formData.price || "0").toFixed(2),
           stock: isNaN(stockNum) ? 0 : stockNum,
           status: getStatus(isNaN(stockNum) ? 0 : stockNum),
-          image_url: formData.image_url || ''
+          image_url: formData.image_url || '',
+          parent_product_id: formData.parent_product_id || '',
+          breakdown_ratio: isNaN(ratioNum) ? undefined : ratioNum
         };
       }
       return p;
@@ -311,14 +329,26 @@ export default function InventoryPage() {
              </p>
           )}
         </div>
-        <Button 
-           onClick={handleOpenAdd}
-           disabled={isLoading || !tenantId}
-           type="button"
-           className="bg-[#141b2d] hover:bg-blue-600 text-white rounded-2xl shadow-xl shadow-[#141b2d]/10 h-14 px-8 text-base font-extrabold transition-all active:scale-[0.98] disabled:opacity-50"
-        >
-          <PlusCircle className="mr-2.5 h-6 w-6" /> {t('add_product')}
-        </Button>
+        <div className="flex gap-3">
+          <Button 
+             onClick={() => setIsImportOpen(true)}
+             disabled={isLoading || !tenantId}
+             type="button"
+             variant="outline"
+             className="border-zinc-200 text-[#141b2d] bg-white rounded-2xl shadow-sm hover:bg-zinc-50 h-14 px-6 text-base font-extrabold transition-all active:scale-[0.98] disabled:opacity-50"
+          >
+            <FileSpreadsheet className="mr-2 h-5 w-5 text-emerald-600" />
+            {lang === 'en' ? 'Import QuickBooks' : 'Soo Geli QuickBooks'}
+          </Button>
+          <Button 
+             onClick={handleOpenAdd}
+             disabled={isLoading || !tenantId}
+             type="button"
+             className="bg-[#141b2d] hover:bg-blue-600 text-white rounded-2xl shadow-xl shadow-[#141b2d]/10 h-14 px-8 text-base font-extrabold transition-all active:scale-[0.98] disabled:opacity-50"
+          >
+            <PlusCircle className="mr-2.5 h-6 w-6" /> {t('add_product')}
+          </Button>
+        </div>
       </div>
 
       <div className="bg-white border border-zinc-100 rounded-3xl p-2 mb-8 shadow-[0_2px_20px_-5px_rgba(0,0,0,0.05)] flex items-center space-x-4">
@@ -365,7 +395,17 @@ export default function InventoryPage() {
                     <div className="h-10 w-10 shrink-0 bg-white border border-zinc-100 shadow-sm rounded-xl overflow-hidden flex items-center justify-center p-0.5">
                        <img src={`https://ui-avatars.com/api/?name=${encodeURIComponent(item.name)}&background=random&color=fff&size=100&font-size=0.4`} alt={item.name} className="w-full h-full object-cover rounded-lg group-hover:scale-110 transition-transform" />
                     </div>
-                    <span>{item.name}</span>
+                    <div className="flex flex-col">
+                       <span>{item.name}</span>
+                       {item.parent_product_id && (() => {
+                          const parent = inventory.find(p => p.id === item.parent_product_id);
+                          return parent ? (
+                             <span className="text-[10px] text-blue-500 font-bold mt-0.5 uppercase tracking-wide">
+                                📦 Laga jaro: {parent.name} (1 → {item.breakdown_ratio || 1})
+                             </span>
+                          ) : null;
+                       })()}
+                    </div>
                   </div>
                 </TableCell>
                 <TableCell className="text-[#141b2d] font-black px-6">${item.price}</TableCell>
@@ -505,6 +545,52 @@ export default function InventoryPage() {
                    onChange={(e) => setFormData({...formData, stock: e.target.value})}
                 />
               </div>
+            </div>
+            {/* Auto-Breakdown (Unit Deconsolidation) */}
+            <div className="border border-zinc-100 rounded-xl p-3 bg-zinc-50/50 space-y-3">
+              <label className="flex items-center space-x-2 text-xs font-bold text-zinc-600 cursor-pointer">
+                <input 
+                  type="checkbox" 
+                  checked={formData.parent_product_id !== ''}
+                  onChange={(e) => {
+                    if (!e.target.checked) {
+                      setFormData(prev => ({ ...prev, parent_product_id: '', breakdown_ratio: '' }));
+                    } else {
+                      setFormData(prev => ({ ...prev, parent_product_id: 'SELECT_PARENT' }));
+                    }
+                  }}
+                  className="rounded border-zinc-300 h-4 w-4 text-blue-600"
+                />
+                <span>Badeecadani waa xabo laga jaro baakidh / Sold from a box</span>
+              </label>
+
+              {formData.parent_product_id !== '' && (
+                <div className="grid gap-2 pl-6 animate-in fade-in slide-in-from-top-1 duration-200">
+                  <div className="grid gap-1">
+                    <label className="text-[11px] font-bold text-zinc-500">Dooro Baakidhka / Select Parent</label>
+                    <select
+                      value={formData.parent_product_id === 'SELECT_PARENT' ? '' : formData.parent_product_id}
+                      onChange={(e) => setFormData(prev => ({ ...prev, parent_product_id: e.target.value }))}
+                      className="bg-white border border-zinc-200 rounded-lg p-2 text-sm font-semibold text-[#141b2d] focus:outline-none"
+                    >
+                      <option value="">-- Dooro Baakidhka / Select Parent --</option>
+                      {inventory.filter(p => p.id !== formData.id).map(p => (
+                        <option key={p.id} value={p.id}>{p.name} ({p.sku})</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div className="grid gap-1">
+                    <label className="text-[11px] font-bold text-zinc-500">Migaanka / Breakdown Ratio (e.g. 20)</label>
+                    <Input 
+                      type="number"
+                      placeholder="e.g. 20"
+                      className="bg-white border-zinc-200 h-10 text-sm"
+                      value={formData.breakdown_ratio}
+                      onChange={(e) => setFormData(prev => ({ ...prev, breakdown_ratio: e.target.value }))}
+                    />
+                  </div>
+                </div>
+              )}
             </div>
             <div className="grid gap-2">
               <label className="text-sm font-bold text-zinc-600 flex justify-between items-center">
@@ -646,6 +732,52 @@ export default function InventoryPage() {
                 />
               </div>
             </div>
+            {/* Auto-Breakdown (Unit Deconsolidation) */}
+            <div className="border border-zinc-100 rounded-xl p-3 bg-zinc-50/50 space-y-3">
+              <label className="flex items-center space-x-2 text-xs font-bold text-zinc-600 cursor-pointer">
+                <input 
+                  type="checkbox" 
+                  checked={formData.parent_product_id !== ''}
+                  onChange={(e) => {
+                    if (!e.target.checked) {
+                      setFormData(prev => ({ ...prev, parent_product_id: '', breakdown_ratio: '' }));
+                    } else {
+                      setFormData(prev => ({ ...prev, parent_product_id: 'SELECT_PARENT' }));
+                    }
+                  }}
+                  className="rounded border-zinc-300 h-4 w-4 text-blue-600"
+                />
+                <span>Badeecadani waa xabo laga jaro baakidh / Sold from a box</span>
+              </label>
+
+              {formData.parent_product_id !== '' && (
+                <div className="grid gap-2 pl-6 animate-in fade-in slide-in-from-top-1 duration-200">
+                  <div className="grid gap-1">
+                    <label className="text-[11px] font-bold text-zinc-500">Dooro Baakidhka / Select Parent</label>
+                    <select
+                      value={formData.parent_product_id === 'SELECT_PARENT' ? '' : formData.parent_product_id}
+                      onChange={(e) => setFormData(prev => ({ ...prev, parent_product_id: e.target.value }))}
+                      className="bg-white border border-zinc-200 rounded-lg p-2 text-sm font-semibold text-[#141b2d] focus:outline-none"
+                    >
+                      <option value="">-- Dooro Baakidhka / Select Parent --</option>
+                      {inventory.filter(p => p.id !== formData.id).map(p => (
+                        <option key={p.id} value={p.id}>{p.name} ({p.sku})</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div className="grid gap-1">
+                    <label className="text-[11px] font-bold text-zinc-500">Migaanka / Breakdown Ratio (e.g. 20)</label>
+                    <Input 
+                      type="number"
+                      placeholder="e.g. 20"
+                      className="bg-white border-zinc-200 h-10 text-sm"
+                      value={formData.breakdown_ratio}
+                      onChange={(e) => setFormData(prev => ({ ...prev, breakdown_ratio: e.target.value }))}
+                    />
+                  </div>
+                </div>
+              )}
+            </div>
             <div className="grid gap-2">
               <label className="text-sm font-bold text-zinc-600 flex justify-between items-center">
                 <span>{lang === 'en' ? 'Product Image' : 'Sawirka Badeecada'}</span>
@@ -692,7 +824,14 @@ export default function InventoryPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-
+      <CsvImporter 
+         type="products"
+         tenantId={tenantId || ''}
+         isOpen={isImportOpen}
+         onClose={() => setIsImportOpen(false)}
+         onComplete={fetchInventory}
+         lang={lang}
+      />
     </div>
   );
 }

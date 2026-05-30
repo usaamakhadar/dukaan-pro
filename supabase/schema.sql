@@ -118,6 +118,8 @@ CREATE TABLE products (
     low_stock_threshold INTEGER DEFAULT 5, -- Alert for low stock
     barcode TEXT,
     image_url TEXT,
+    parent_product_id UUID REFERENCES products(id) ON DELETE SET NULL,
+    breakdown_ratio INTEGER,
     created_at TIMESTAMPTZ DEFAULT NOW(),
     updated_at TIMESTAMPTZ DEFAULT NOW()
 );

@@ -1,10 +1,8 @@
--- =========================================
--- ATOMIC POS CHECKOUT RPC
--- =========================================
--- This function guarantees that creating a sale, inserting items, 
--- deducting stock, and updating customer balances happen in ONE transaction.
--- If any step fails (e.g., negative stock), everything rolls back safely.
+-- 1. Add Parent Product and Breakdown Ratio columns to products table
+ALTER TABLE public.products ADD COLUMN IF NOT EXISTS parent_product_id UUID REFERENCES public.products(id) ON DELETE SET NULL;
+ALTER TABLE public.products ADD COLUMN IF NOT EXISTS breakdown_ratio INTEGER;
 
+-- 2. Update process_pos_checkout RPC to support atomic auto-breakdown on checkout
 CREATE OR REPLACE FUNCTION process_pos_checkout(
     p_tenant_id UUID,
     p_cashier_id UUID,
