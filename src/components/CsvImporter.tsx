@@ -100,23 +100,45 @@ export default function CsvImporter({ type, tenantId, isOpen, onClose, onComplet
       try {
         const text = e.target?.result as string;
         const rows = parseCSV(text);
-        if (rows.length < 2) {
+        if (rows.length < 1) {
           throw new Error(lang === 'en' ? "CSV file is empty!" : "Faylka CSV-ga waa eber!");
         }
 
-        const headers = rows[0].map(h => h.toLowerCase().trim().replace(/["']/g, ''));
-        const dataRows = rows.slice(1).filter(r => r.length > 0 && r.some(cell => cell !== ''));
+        // Scan the first 15 rows to find the headers row (contains name/item/customer)
+        let headerRowIndex = 0;
+        let foundHeaders = false;
+        for (let i = 0; i < Math.min(rows.length, 15); i++) {
+          const rowMapped = rows[i].map(h => h.toLowerCase().trim().replace(/["']/g, ''));
+          const hasName = rowMapped.some(h => h === 'name' || h === 'item' || h === 'product' || h === 'customer' || h === 'client');
+          if (hasName) {
+            headerRowIndex = i;
+            foundHeaders = true;
+            break;
+          }
+        }
+
+        const headers = rows[headerRowIndex].map(h => h.toLowerCase().trim().replace(/["']/g, ''));
+        const dataRows = rows.slice(headerRowIndex + 1).filter(r => r.length > 0 && r.some(cell => cell !== ''));
 
         setStatusMessage(lang === 'en' ? `Processing ${dataRows.length} rows...` : `Waxa la shaqaynayaa ${dataRows.length} xariiqood...`);
 
+        const findIndexWithFallback = (keywords: string[]) => {
+          // 1. Try exact match
+          let idx = headers.findIndex(h => keywords.includes(h));
+          if (idx !== -1) return idx;
+          // 2. Try substring match (e.g. "cost (cr)" matches "cost")
+          idx = headers.findIndex(h => keywords.some(k => h.includes(k)));
+          return idx;
+        };
+
         if (type === 'products') {
           // QuickBooks Header Mapping
-          const nameIndex = headers.findIndex(h => h === 'item' || h === 'product' || h === 'product/service' || h === 'name');
-          const skuIndex = headers.findIndex(h => h === 'sku' || h === 'part number' || h === 'number' || h === 'code');
-          const barcodeIndex = headers.findIndex(h => h === 'barcode' || h === 'upc' || h === 'ean');
-          const stockIndex = headers.findIndex(h => h === 'qty' || h === 'quantity' || h === 'quantity on hand' || h === 'stock');
-          const priceIndex = headers.findIndex(h => h === 'price' || h === 'rate' || h === 'sales price');
-          const costIndex = headers.findIndex(h => h === 'cost' || h === 'purchase cost' || h === 'purchase price');
+          const nameIndex = findIndexWithFallback(['item', 'product', 'product/service', 'name']);
+          const skuIndex = findIndexWithFallback(['sku', 'part number', 'number', 'code']);
+          const barcodeIndex = findIndexWithFallback(['barcode', 'upc', 'ean']);
+          const stockIndex = findIndexWithFallback(['qty', 'quantity', 'quantity on hand', 'stock']);
+          const priceIndex = findIndexWithFallback(['price', 'rate', 'sales price']);
+          const costIndex = findIndexWithFallback(['cost', 'purchase cost', 'purchase price']);
 
           if (nameIndex === -1) {
             throw new Error(lang === 'en' ? "Could not find 'Name' or 'Item' column!" : "Lama helin tiirka 'Name' ama 'Item'!");
@@ -154,10 +176,10 @@ export default function CsvImporter({ type, tenantId, isOpen, onClose, onComplet
           toast.success(lang === 'en' ? `Successfully imported ${productsToInsert.length} products! 🛒` : `Guul! Waxa la soo geliyay ${productsToInsert.length} badeecadood! 🛒`);
         } else {
           // Customers Header Mapping
-          const nameIndex = headers.findIndex(h => h === 'customer' || h === 'name' || h === 'full name' || h === 'client');
-          const phoneIndex = headers.findIndex(h => h === 'phone' || h === 'telephone' || h === 'mobile' || h === 'contact');
-          const emailIndex = headers.findIndex(h => h === 'email' || h === 'email address');
-          const addressIndex = headers.findIndex(h => h === 'address' || h === 'city' || h === 'location');
+          const nameIndex = findIndexWithFallback(['customer', 'name', 'full name', 'client']);
+          const phoneIndex = findIndexWithFallback(['phone', 'telephone', 'mobile', 'contact']);
+          const emailIndex = findIndexWithFallback(['email', 'email address']);
+          const addressIndex = findIndexWithFallback(['address', 'city', 'location']);
 
           if (nameIndex === -1) {
             throw new Error(lang === 'en' ? "Could not find 'Name' or 'Customer' column!" : "Lama helin tiirka 'Name' ama 'Customer'!");
