@@ -29,6 +29,19 @@ export default function CsvImporter({ type, tenantId, isOpen, onClose, onComplet
   const [statusMessage, setStatusMessage] = useState("");
 
   const parseCSV = (text: string) => {
+    // Detect delimiter (comma, semicolon, or tab)
+    const firstLine = text.split(/\r?\n/)[0] || '';
+    const commaCount = (firstLine.match(/,/g) || []).length;
+    const semiCount = (firstLine.match(/;/g) || []).length;
+    const tabCount = (firstLine.match(/\t/g) || []).length;
+    
+    let delim = ',';
+    if (semiCount > commaCount && semiCount > tabCount) {
+      delim = ';';
+    } else if (tabCount > commaCount && tabCount > semiCount) {
+      delim = '\t';
+    }
+
     const lines: string[][] = [];
     let row: string[] = [];
     let inQuotes = false;
@@ -45,7 +58,7 @@ export default function CsvImporter({ type, tenantId, isOpen, onClose, onComplet
         } else {
           inQuotes = !inQuotes;
         }
-      } else if (char === ',' && !inQuotes) {
+      } else if (char === delim && !inQuotes) {
         row.push(currentField.trim());
         currentField = '';
       } else if ((char === '\r' || char === '\n') && !inQuotes) {
@@ -68,7 +81,7 @@ export default function CsvImporter({ type, tenantId, isOpen, onClose, onComplet
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const selected = e.target.files?.[0];
     if (selected) {
-      if (!selected.name.endsWith('.csv')) {
+      if (!selected.name.toLowerCase().endsWith('.csv')) {
         toast.error(lang === 'en' ? "Please upload a .csv file!" : "Fadlan soo gali fayl ah .csv!");
         return;
       }
@@ -200,7 +213,7 @@ export default function CsvImporter({ type, tenantId, isOpen, onClose, onComplet
           </DialogTitle>
         </DialogHeader>
 
-        <div className="py-6 flex flex-col items-center justify-center border-2 border-dashed border-zinc-200 rounded-2xl bg-zinc-50 p-6 text-center group hover:border-emerald-500 transition-colors">
+        <div className="relative py-6 flex flex-col items-center justify-center border-2 border-dashed border-zinc-200 rounded-2xl bg-zinc-50 p-6 text-center group hover:border-emerald-500 transition-colors">
           <Upload className="h-10 w-10 text-zinc-400 group-hover:text-emerald-600 transition-colors mb-3" />
           <p className="text-sm font-semibold text-zinc-700 mb-1">
             {file ? file.name : (lang === 'en' ? 'Click to select QuickBooks CSV file' : 'Riix si aad u doorato QuickBooks CSV')}
