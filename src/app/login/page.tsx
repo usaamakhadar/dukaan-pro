@@ -157,8 +157,9 @@ export default function LoginPage() {
 
           <form onSubmit={handleLogin} className="space-y-6">
             <div className="space-y-2">
-              <label className="text-sm font-extrabold text-zinc-700 uppercase tracking-widest pl-1">{t('email_label')}</label>
+              <label htmlFor="email" className="text-sm font-extrabold text-zinc-700 uppercase tracking-widest pl-1">{t('email_label')}</label>
               <Input 
+                id="email"
                 type="email" 
                 required 
                 value={email}
@@ -169,8 +170,9 @@ export default function LoginPage() {
             </div>
             
             <div className="space-y-2">
-              <label className="text-sm font-extrabold text-zinc-700 uppercase tracking-widest pl-1">{t('password_label')}</label>
+              <label htmlFor="password" className="text-sm font-extrabold text-zinc-700 uppercase tracking-widest pl-1">{t('password_label')}</label>
               <Input 
+                id="password"
                 type="password" 
                 required 
                 value={password}

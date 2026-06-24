@@ -126,8 +126,9 @@ export default function RegisterPage() {
 
           <form onSubmit={handleRegister} className="space-y-6">
             <div className="space-y-2">
-              <label className="text-sm font-extrabold text-zinc-700 uppercase tracking-widest pl-1">{t('store_name_label')}</label>
+              <label htmlFor="storeName" className="text-sm font-extrabold text-zinc-700 uppercase tracking-widest pl-1">{t('store_name_label')}</label>
               <Input 
+                id="storeName"
                 type="text" 
                 required 
                 value={storeName}
@@ -138,8 +139,9 @@ export default function RegisterPage() {
             </div>
             
             <div className="space-y-2">
-              <label className="text-sm font-extrabold text-zinc-700 uppercase tracking-widest pl-1">{t('admin_email_label')}</label>
+              <label htmlFor="email" className="text-sm font-extrabold text-zinc-700 uppercase tracking-widest pl-1">{t('admin_email_label')}</label>
               <Input 
+                id="email"
                 type="email" 
                 required 
                 value={email}
@@ -150,8 +152,9 @@ export default function RegisterPage() {
             </div>
             
             <div className="space-y-2">
-              <label className="text-sm font-extrabold text-zinc-700 uppercase tracking-widest pl-1">{t('password_label')}</label>
+              <label htmlFor="password" className="text-sm font-extrabold text-zinc-700 uppercase tracking-widest pl-1">{t('password_label')}</label>
               <Input 
+                id="password"
                 type="password" 
                 required 
                 value={password}
