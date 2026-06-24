@@ -133,6 +133,7 @@ export default function RegisterPage() {
                 required 
                 value={storeName}
                 onChange={(e) => setStoreName(e.target.value)}
+                autoComplete="organization"
                 className="bg-white lg:bg-[#f9f9fb] h-14 border-zinc-200 ring-4 ring-transparent focus-visible:ring-blue-500/20 focus-visible:border-blue-500 transition-all font-semibold text-[#141b2d] text-base px-5 rounded-2xl shadow-sm" 
                 placeholder={t('store_name_placeholder')} 
               />
@@ -146,6 +147,7 @@ export default function RegisterPage() {
                 required 
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
+                autoComplete="email"
                 className="bg-white lg:bg-[#f9f9fb] h-14 border-zinc-200 ring-4 ring-transparent focus-visible:ring-blue-500/20 focus-visible:border-blue-500 transition-all font-semibold text-[#141b2d] text-base px-5 rounded-2xl shadow-sm" 
                 placeholder={t('email_placeholder')} 
               />
@@ -159,6 +161,7 @@ export default function RegisterPage() {
                 required 
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
+                autoComplete="new-password"
                 className="bg-white lg:bg-[#f9f9fb] h-14 border-zinc-200 ring-4 ring-transparent focus-visible:ring-blue-500/20 focus-visible:border-blue-500 transition-all font-semibold text-[#141b2d] text-base px-5 rounded-2xl shadow-sm" 
                 placeholder={t('password_placeholder')} 
               />
