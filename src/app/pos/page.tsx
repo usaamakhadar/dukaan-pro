@@ -78,12 +78,38 @@ export default function POSPage() {
   const [cart, setCart] = useState<CartItem[]>([]);
   const [isProcessing, setIsProcessing] = useState(false);
 
+  const updateCategoriesState = (products: any[]) => {
+    const uniqueCats = new Set<string>();
+    products.forEach((p: any) => {
+       if (p.categories?.name) uniqueCats.add(p.categories.name);
+    });
+    const dynamicCats = Array.from(uniqueCats).map(c => ({ id: c, label: c }));
+    setCategories([{ id: "All Items", label: "All Items" }, ...dynamicCats]);
+  };
+
   useEffect(() => {
+    // 1. Instant load from local cache for 0ms delay!
+    try {
+      const cached = localStorage.getItem("pos_products_cache");
+      if (cached) {
+        const parsed = JSON.parse(cached);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          setDbProducts(parsed);
+          barcodeService.rebuildCache(parsed);
+          updateCategoriesState(parsed);
+          setIsLoadingProducts(false);
+        }
+      }
+    } catch (e) {
+      console.error(e);
+    }
+
+    // 2. Start product & session fetches immediately in parallel
+    fetchProducts();
     fetchSession();
   }, []);
 
   const fetchSession = async () => {
-    setIsLoadingProducts(true);
     const { data: { user } } = await supabase.auth.getUser();
     if (user) {
       const defaultName = user.email?.split('@')[0] || "User";
@@ -119,18 +145,15 @@ export default function POSPage() {
         // @ts-ignore
         setStoreName(roleData.tenants?.name || "");
         
-        // Fetch Settings, Products, and Customers in parallel to boost speed dramatically!
+        // Fetch Settings & Customers concurrently
         const [settingsRes] = await Promise.all([
           supabase.from('tenant_settings').select('*').eq('tenant_id', roleData.tenant_id).single(),
-          fetchProducts(),
           fetchCustomers()
         ]);
         
         if (settingsRes.data) {
            setTenantSettings(settingsRes.data);
         }
-      } else {
-        setIsLoadingProducts(false);
       }
     } else {
         window.location.replace('/login');
@@ -143,7 +166,12 @@ export default function POSPage() {
   };
 
   const fetchProducts = async () => {
-    setIsLoadingProducts(true);
+    // Only show skeleton if we don't already have products loaded
+    setDbProducts(prev => {
+      if (prev.length === 0) setIsLoadingProducts(true);
+      return prev;
+    });
+
     try {
       const { data: products } = await supabase
         .from('products')
@@ -153,14 +181,12 @@ export default function POSPage() {
       if (products) {
         setDbProducts(products);
         barcodeService.rebuildCache(products);
-
-        // Extract unique categories dynamically
-        const uniqueCats = new Set<string>();
-        products.forEach((p: any) => {
-           if (p.categories?.name) uniqueCats.add(p.categories.name);
-        });
-        const dynamicCats = Array.from(uniqueCats).map(c => ({ id: c, label: c }));
-        setCategories([{ id: "All Items", label: "All Items" }, ...dynamicCats]);
+        updateCategoriesState(products);
+        try {
+          localStorage.setItem("pos_products_cache", JSON.stringify(products));
+        } catch (e) {
+          // ignore quota error
+        }
       }
     } catch (err) {
       console.error(err);

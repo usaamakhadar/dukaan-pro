@@ -241,6 +241,7 @@ export default function InventoryPage() {
         parent_product_id: data.parent_product_id || '',
         breakdown_ratio: data.breakdown_ratio || undefined
       }, ...prev]);
+      try { localStorage.removeItem("pos_products_cache"); } catch (e) {}
     }
     
     setIsAddOpen(false);
@@ -323,6 +324,7 @@ export default function InventoryPage() {
       }
       return p;
     }));
+    try { localStorage.removeItem("pos_products_cache"); } catch (e) {}
     setIsEditOpen(false);
     toast.success(lang === 'en' ? "Product updated successfully! ✅" : "Macluumaadka badeecada waa la cusboonaysiiyay! ✅");
   };
@@ -332,6 +334,7 @@ export default function InventoryPage() {
       const { error } = await supabase.from('products').delete().eq('id', id);
       if (!error) {
         setInventory(prev => prev.filter(p => p.id !== id));
+        try { localStorage.removeItem("pos_products_cache"); } catch (e) {}
         toast.success(lang === 'en' ? "Product deleted" : "Waa la tirtiray!");
       } else {
          toast.error(error.message);
