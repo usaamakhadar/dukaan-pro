@@ -5,11 +5,11 @@ const nextConfig: NextConfig = {
     remotePatterns: [
       {
         protocol: "https",
-        hostname: "images.unsplash.com",
+        hostname: "**",
       },
       {
-        protocol: "https",
-        hostname: "i.pravatar.cc",
+        protocol: "http",
+        hostname: "**",
       },
     ],
   },
@@ -20,7 +20,7 @@ const nextConfig: NextConfig = {
         headers: [
           {
             key: "Content-Security-Policy",
-            value: "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://qviowifiqaepwanwdjuj.supabase.co; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://images.unsplash.com https://i.pravatar.cc https://ui-avatars.com https://loremflickr.com; connect-src 'self' https://qviowifiqaepwanwdjuj.supabase.co wss://qviowifiqaepwanwdjuj.supabase.co; font-src 'self'; object-src 'none'; frame-ancestors 'none';",
+            value: "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://qviowifiqaepwanwdjuj.supabase.co; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https: http:; connect-src 'self' https://qviowifiqaepwanwdjuj.supabase.co wss://qviowifiqaepwanwdjuj.supabase.co; font-src 'self'; object-src 'none'; frame-ancestors 'none';",
           },
         ],
       },

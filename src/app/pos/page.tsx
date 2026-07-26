@@ -60,6 +60,7 @@ export default function POSPage() {
   // Data State
   const [dbProducts, setDbProducts] = useState<any[]>([]);
   const [categories, setCategories] = useState<{id: string, label: string}[]>([{ id: "All Items", label: t('all_items') || "All Items" }]);
+  const [isLoadingProducts, setIsLoadingProducts] = useState(true);
   
   // Checkout State
   const [activeCategory, setActiveCategory] = useState("All Items");
@@ -82,6 +83,7 @@ export default function POSPage() {
   }, []);
 
   const fetchSession = async () => {
+    setIsLoadingProducts(true);
     const { data: { user } } = await supabase.auth.getUser();
     if (user) {
       const defaultName = user.email?.split('@')[0] || "User";
@@ -127,6 +129,8 @@ export default function POSPage() {
         if (settingsRes.data) {
            setTenantSettings(settingsRes.data);
         }
+      } else {
+        setIsLoadingProducts(false);
       }
     } else {
         window.location.replace('/login');
@@ -139,22 +143,29 @@ export default function POSPage() {
   };
 
   const fetchProducts = async () => {
-    const { data: products } = await supabase
-      .from('products')
-      .select('*, categories(name)')
-      .order('created_at', { ascending: false });
+    setIsLoadingProducts(true);
+    try {
+      const { data: products } = await supabase
+        .from('products')
+        .select('*, categories(name)')
+        .order('created_at', { ascending: false });
 
-    if (products) {
-      setDbProducts(products);
-      barcodeService.rebuildCache(products);
+      if (products) {
+        setDbProducts(products);
+        barcodeService.rebuildCache(products);
 
-      // Extract unique categories dynamically
-      const uniqueCats = new Set<string>();
-      products.forEach((p: any) => {
-         if (p.categories?.name) uniqueCats.add(p.categories.name);
-      });
-      const dynamicCats = Array.from(uniqueCats).map(c => ({ id: c, label: c }));
-      setCategories([{ id: "All Items", label: "All Items" }, ...dynamicCats]);
+        // Extract unique categories dynamically
+        const uniqueCats = new Set<string>();
+        products.forEach((p: any) => {
+           if (p.categories?.name) uniqueCats.add(p.categories.name);
+        });
+        const dynamicCats = Array.from(uniqueCats).map(c => ({ id: c, label: c }));
+        setCategories([{ id: "All Items", label: "All Items" }, ...dynamicCats]);
+      }
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setIsLoadingProducts(false);
     }
   };
 
@@ -755,9 +766,19 @@ export default function POSPage() {
             ))}
           </div>
 
-          {filteredProducts.length === 0 ? (
+          {isLoadingProducts ? (
+            <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-4 md:gap-6">
+              {[...Array(8)].map((_, i) => (
+                <div key={i} className="bg-white rounded-3xl p-4 border border-zinc-100 shadow-sm animate-pulse flex flex-col space-y-4">
+                  <div className="w-full aspect-[4/5] bg-zinc-200/60 rounded-2xl"></div>
+                  <div className="h-4 bg-zinc-200/60 rounded w-3/4"></div>
+                  <div className="h-5 bg-zinc-200/60 rounded w-1/3"></div>
+                </div>
+              ))}
+            </div>
+          ) : filteredProducts.length === 0 ? (
              <div className="text-zinc-400 text-center py-20 bg-white rounded-3xl border border-dashed border-zinc-200 shadow-sm font-bold">
-               {dbProducts.length === 0 ? (lang === 'en' ? "Please add products to your Inventory first!" : "Fadlan Alaab ku soo dar Kaydkaaga (Inventory) marka hore.") : "Empty"}
+               {dbProducts.length === 0 ? (lang === 'en' ? "Please add products to your Inventory first!" : "Fadlan Alaab ku soo dar Kaydkaaga (Inventory) marka hore.") : (lang === 'en' ? "No products match search." : "Lama helin alaab waafaqsan raadintaada.")}
              </div>
           ) : (
             <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-4 md:gap-6">
@@ -773,6 +794,10 @@ export default function POSPage() {
                       <img 
                         src={p.image_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(p.name)}&background=random&color=fff&size=400&font-size=0.33`} 
                         alt={p.name} 
+                        referrerPolicy="no-referrer"
+                        onError={(e) => {
+                          e.currentTarget.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(p.name)}&background=random&color=fff&size=400&font-size=0.33`;
+                        }}
                         className={`object-cover w-full h-full transition-transform duration-700 ease-out ${!inCart && 'group-hover:scale-110'}`}
                       />
                       <div className="absolute inset-0 bg-black/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>

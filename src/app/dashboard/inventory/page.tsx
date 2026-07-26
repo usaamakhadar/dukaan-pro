@@ -33,6 +33,25 @@ type Product = {
   breakdown_ratio?: number;
 };
 
+function sanitizeImageUrl(rawUrl: string): string {
+  if (!rawUrl) return '';
+  let cleaned = rawUrl.trim();
+  
+  // Extract direct image URL if user pasted a Google Search result link
+  if (cleaned.includes('google.com/') || cleaned.includes('google.so/')) {
+    try {
+      const parsed = new URL(cleaned);
+      const imgurlParam = parsed.searchParams.get('imgurl');
+      if (imgurlParam) return decodeURIComponent(imgurlParam);
+      const urlParam = parsed.searchParams.get('url');
+      if (urlParam) return decodeURIComponent(urlParam);
+    } catch {
+      // ignore parse errors
+    }
+  }
+  return cleaned;
+}
+
 export default function InventoryPage() {
   const { t, lang } = useLanguage();
   const supabase = createClient();
@@ -188,6 +207,8 @@ export default function InventoryPage() {
 
     const stockNum = parseInt(formData.stock, 10);
     const ratioNum = parseInt(formData.breakdown_ratio, 10);
+    const cleanImageUrl = sanitizeImageUrl(formData.image_url);
+
     const productData = {
       tenant_id: tenantId,
       sku: formData.sku.toUpperCase(),
@@ -195,7 +216,7 @@ export default function InventoryPage() {
       name: formData.name,
       price: parseFloat(formData.price || "0"),
       stock: isNaN(stockNum) ? 0 : stockNum,
-      image_url: formData.image_url || null,
+      image_url: cleanImageUrl || null,
       parent_product_id: formData.parent_product_id ? formData.parent_product_id : null,
       breakdown_ratio: isNaN(ratioNum) ? null : ratioNum
     };
@@ -265,6 +286,7 @@ export default function InventoryPage() {
 
     const stockNum = parseInt(formData.stock, 10);
     const ratioNum = parseInt(formData.breakdown_ratio, 10);
+    const cleanImageUrl = sanitizeImageUrl(formData.image_url);
     
     const { error } = await supabase.from('products')
       .update({
@@ -273,7 +295,7 @@ export default function InventoryPage() {
         name: formData.name,
         price: parseFloat(formData.price || "0"),
         stock: isNaN(stockNum) ? 0 : stockNum,
-        image_url: formData.image_url || null,
+        image_url: cleanImageUrl || null,
         parent_product_id: formData.parent_product_id ? formData.parent_product_id : null,
         breakdown_ratio: isNaN(ratioNum) ? null : ratioNum
       })
@@ -294,7 +316,7 @@ export default function InventoryPage() {
           price: parseFloat(formData.price || "0").toFixed(2),
           stock: isNaN(stockNum) ? 0 : stockNum,
           status: getStatus(isNaN(stockNum) ? 0 : stockNum),
-          image_url: formData.image_url || '',
+          image_url: cleanImageUrl || '',
           parent_product_id: formData.parent_product_id || '',
           breakdown_ratio: isNaN(ratioNum) ? undefined : ratioNum
         };
@@ -393,7 +415,15 @@ export default function InventoryPage() {
                 <TableCell className="font-extrabold text-[#141b2d] px-6">
                   <div className="flex items-center space-x-4">
                     <div className="h-10 w-10 shrink-0 bg-white border border-zinc-100 shadow-sm rounded-xl overflow-hidden flex items-center justify-center p-0.5">
-                       <img src={`https://ui-avatars.com/api/?name=${encodeURIComponent(item.name)}&background=random&color=fff&size=100&font-size=0.4`} alt={item.name} className="w-full h-full object-cover rounded-lg group-hover:scale-110 transition-transform" />
+                       <img 
+                          src={item.image_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(item.name)}&background=random&color=fff&size=100&font-size=0.4`} 
+                          alt={item.name}
+                          referrerPolicy="no-referrer"
+                          onError={(e) => {
+                            e.currentTarget.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(item.name)}&background=random&color=fff&size=100&font-size=0.4`;
+                          }}
+                          className="w-full h-full object-cover rounded-lg group-hover:scale-110 transition-transform" 
+                       />
                     </div>
                     <div className="flex flex-col">
                        <span>{item.name}</span>
