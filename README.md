@@ -1,13 +1,13 @@
-# DukaanPro — Enterprise Multi-Tenant Retail POS & Inventory SaaS
+# 🛒 DukaanPro — Enterprise Multi-Tenant Retail POS & Inventory SaaS
 
-[![Next.js 16](https://img.shields.io/badge/Next.js-16.2.1-black?style=for-the-badge&logo=next.js)](https://nextjs.org/)
-[![React 19](https://img.shields.io/badge/React-19.2.4-blue?style=for-the-badge&logo=react)](https://react.dev/)
-[![TypeScript 5](https://img.shields.io/badge/TypeScript-5.0-3178C6?style=for-the-badge&logo=typescript)](https://www.typescriptlang.org/)
-[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-Supabase-336791?style=for-the-badge&logo=postgresql)](https://supabase.com/)
-[![Tailwind CSS v4](https://img.shields.io/badge/Tailwind_CSS-v4-38B2AC?style=for-the-badge&logo=tailwind-css)](https://tailwindcss.com/)
-[![Playwright E2E](https://img.shields.io/badge/Playwright-Stress_Tested-45ba4b?style=for-the-badge&logo=playwright)](https://playwright.dev/)
+[![Next.js](https://img.shields.io/badge/Next.js_16-black?style=for-the-badge&logo=next.js)](https://nextjs.org/)
+[![React](https://img.shields.io/badge/React_19-20232A?style=for-the-badge&logo=react&logoColor=61DAFB)](https://react.dev/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-007ACC?style=for-the-badge&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
+[![Supabase](https://img.shields.io/badge/Supabase-3ECF8E?style=for-the-badge&logo=supabase&logoColor=white)](https://supabase.com/)
+[![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS_v4-38B2AC?style=for-the-badge&logo=tailwind-css&logoColor=white)](https://tailwindcss.com/)
+[![Playwright](https://img.shields.io/badge/Playwright-45BA4B?style=for-the-badge&logo=playwright&logoColor=white)](https://playwright.dev/)
 
-> **DukaanPro** is a production-grade, multi-tenant Point of Sale (POS), Inventory Management, and B2B Billing SaaS platform engineered specifically for high-throughput supermarkets, wholesale distributors, and retail enterprises in Somaliland and emerging African markets.
+**DukaanPro** is a production-grade, multi-tenant Point of Sale (POS), Inventory Management, and B2B Billing SaaS platform engineered specifically for high-throughput supermarkets, wholesale distributors, and retail enterprises in Somaliland and emerging African markets.
 
 ---
 
@@ -27,7 +27,7 @@ DukaanPro addresses these realities with an offline-resilient, sub-millisecond w
 
 ## 🏛️ System Architecture
 
-```
+```text
 ┌────────────────────────────────────────────────────────────────────────────────────────┐
 │                                   CLIENT TIER (POS / PWA)                              │
 │                                                                                        │
@@ -123,33 +123,35 @@ DukaanPro addresses these realities with an offline-resilient, sub-millisecond w
 
 The database schema ([`supabase/schema.sql`](supabase/schema.sql)) consists of **18 relational tables** with Row Level Security (RLS) enabled on every entity:
 
-| Table | Purpose | Multi-Tenant Key |
-| :--- | :--- | :--- |
-| `tenants` | Master store organization record | `id` |
-| `tenant_subscriptions` | SaaS subscription state (trial, active, past_due) | `tenant_id` |
-| `tenant_settings` | Currency, exchange rate, tax rate, receipt headers | `tenant_id` |
-| `user_roles` | Maps `auth.users` to tenant with roles (`owner`, `cashier`, etc.) | `tenant_id` |
-| `shifts` | Cash drawer register shifts and reconciliation | `tenant_id` |
-| `customers` | Customer profiles, wallet balances, debt tracking | `tenant_id` |
-| `suppliers` | Wholesale vendor ledger and debt owed | `tenant_id` |
-| `categories` | Product hierarchy and departments | `tenant_id` |
-| `products` | Barcode, SKU, stock, unit price, breakdown ratio | `tenant_id` |
-| `purchases` | Inbound purchase orders from suppliers | `tenant_id` |
-| `purchase_items` | Line items for inbound restocks | `tenant_id` |
-| `stock_movements` | Immutable audit trail for every inventory change | `tenant_id` |
-| `sales` | Completed retail transactions and tender details | `tenant_id` |
-| `sale_items` | Individual line items attached to a sale | `tenant_id` |
-| `invoices` | Formal accounts receivable invoices | `tenant_id` |
-| `payments` | Customer debt settlements and partial payments | `tenant_id` |
-| `expenses` | Daily operational store expenditures | `tenant_id` |
-| `audit_logs` | Security trace log for sensitive actions | `tenant_id` |
+| # | Table Name | Purpose & Domain Logic | Multi-Tenant Key |
+| :-: | :--- | :--- | :--- |
+| 1 | `tenants` | Master store organization record and SaaS entity | `id` |
+| 2 | `tenant_subscriptions` | SaaS subscription billing state (`trial`, `active`, `past_due`, `suspended`) | `tenant_id` |
+| 3 | `tenant_settings` | Base currency, daily exchange rate, tax rate, and receipt headers | `tenant_id` |
+| 4 | `user_roles` | Maps `auth.users` to tenant with RBAC (`owner`, `admin`, `cashier`, `accountant`) | `tenant_id` |
+| 5 | `shifts` | Cash drawer register shifts, opening/closing balance reconciliation | `tenant_id` |
+| 6 | `customers` | Customer master data, wallet balance, credit limits, and loyalty points | `tenant_id` |
+| 7 | `suppliers` | Wholesale vendor ledger, contact records, and accounts payable balance | `tenant_id` |
+| 8 | `categories` | Product hierarchy, merchandise departments, and organization | `tenant_id` |
+| 9 | `products` | SKU, barcode, stock quantity, unit cost, price, parent pack link, and breakdown ratio | `tenant_id` |
+| 10 | `purchases` | Inbound purchase orders from suppliers and restock tracking | `tenant_id` |
+| 11 | `purchase_items` | Individual line items and cost valuations for inbound restocks | `tenant_id` |
+| 12 | `stock_movements` | Immutable audit log for sales, adjustments, returns, and auto-breakdowns | `tenant_id` |
+| 13 | `sales` | Completed retail transactions, cashier links, tender methods, and discount totals | `tenant_id` |
+| 14 | `sale_items` | Line items attached to sales with historical price captures | `tenant_id` |
+| 15 | `invoices` | Formal accounts receivable commercial billing documents | `tenant_id` |
+| 16 | `payments` | Customer debt settlements and partial payment tracking | `tenant_id` |
+| 17 | `expenses` | Daily operational expenditures categorized against active shifts | `tenant_id` |
+| 18 | `audit_logs` | Security trace log capturing mutations, actor IDs, timestamps, and IP addresses | `tenant_id` |
 
 ### Multi-Tenant Isolation Rule
+
 ```sql
 CREATE POLICY "Tenant Data Isolation" 
 ON public.products FOR ALL 
 USING (tenant_id IN (SELECT public.get_user_tenant_ids()));
 ```
+
 All tenant queries route through `public.get_user_tenant_ids()` (`SECURITY DEFINER` with explicit `search_path = public`), ensuring zero cross-tenant leakage.
 
 ---
@@ -170,11 +172,13 @@ The repository includes a comprehensive Playwright End-to-End stress test suite 
 ## 🚀 Getting Started
 
 ### Prerequisites
+
 * **Node.js**: `v20.x` or `v22.x`
 * **Package Manager**: `npm` (or `pnpm`)
 * **Supabase Account**: Cloud or local CLI instance
 
 ### 1. Clone & Install Dependencies
+
 ```bash
 git clone https://github.com/usaamakhadar/dukaan-pro.git
 cd dukaan-pro
@@ -182,30 +186,39 @@ npm install
 ```
 
 ### 2. Configure Environment Variables
+
 Copy the template environment file:
+
 ```bash
 cp .env.example .env.local
 ```
+
 Fill in your Supabase project credentials in `.env.local`:
+
 ```env
 NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
 NEXT_PUBLIC_SUPABASE_ANON_KEY=your-supabase-anon-key
 ```
 
 ### 3. Initialize the Database
+
 Execute the SQL migrations in order within your Supabase SQL Editor:
+
 1. `supabase/schema.sql` (Core schema, RLS policies, trigger)
 2. `supabase/rpc_atomic_checkout.sql` (Atomic checkout RPC)
 3. `supabase/migrations/20260530_auto_breakdown.sql` (Deconsolidation algorithm)
 4. `supabase/migrations/20260731_security_fixes.sql` (Security hardening)
 
 ### 4. Run Development Server
+
 ```bash
 npm run dev
 ```
+
 Open [http://localhost:3000](http://localhost:3000) in your browser.
 
 ### 5. Run Type Checks & Stress Tests
+
 ```bash
 # TypeScript Typecheck (0 errors)
 npx tsc --noEmit
@@ -228,4 +241,5 @@ npx playwright test
 ---
 
 ## 📄 License
+
 This project is proprietary and built as a flagship software engineering showcase. All rights reserved.
