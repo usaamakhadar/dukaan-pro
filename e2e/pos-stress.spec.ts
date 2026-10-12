@@ -21,8 +21,8 @@ import { test, expect, Page } from '@playwright/test';
 // ─────────────────────────────────────────────────────────────────────────────
 // CONFIG
 // ─────────────────────────────────────────────────────────────────────────────
-const EMAIL_A = process.env.E2E_TEST_EMAIL     || 'admin@dukaan.pro';
-const PASS_A  = process.env.E2E_TEST_PASSWORD  || '123456';
+const EMAIL_A = process.env.E2E_TEST_EMAIL     || 'test.cashier@example.com';
+const PASS_A  = process.env.E2E_TEST_PASSWORD  || 'TestPassword123!';
 const EMAIL_B = process.env.E2E_TEST_EMAIL_B   || '';
 const PASS_B  = process.env.E2E_TEST_PASSWORD_B|| '';
 
