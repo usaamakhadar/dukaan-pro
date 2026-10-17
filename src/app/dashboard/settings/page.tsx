@@ -176,16 +176,16 @@ export default function SettingsPage() {
   };
 
   return (
-    <div className="max-w-5xl mx-auto space-y-8 animate-in fade-in duration-700">
-      <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 border-b border-zinc-100 pb-8">
+    <div className="w-full max-w-5xl mx-auto space-y-6 sm:space-y-8 animate-in fade-in duration-700 overflow-x-hidden">
+      <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 border-b border-zinc-100 pb-6 sm:pb-8">
         <div>
-           <h2 className="text-4xl font-black tracking-tight text-[#141b2d] uppercase">{lang === 'en' ? 'Settings' : 'Maamulka'}</h2>
+           <h2 className="text-2xl sm:text-4xl font-black tracking-tight text-[#141b2d] uppercase">{lang === 'en' ? 'Settings' : 'Maamulka'}</h2>
            <p className="text-zinc-500 font-medium mt-1">{lang === 'en' ? 'System orchestration and store preferences.' : 'Habee muuqaalka dukaankaaga iyo xogta iibka.'}</p>
         </div>
         <Button 
           disabled={isLoading || isSaving} 
           onClick={handleSaveAll} 
-          className="bg-emerald-600 hover:bg-emerald-700 text-white rounded-2xl h-14 px-8 font-black uppercase text-xs tracking-widest shadow-xl shadow-emerald-100 transition-all active:scale-95 flex items-center gap-2"
+          className="bg-emerald-600 hover:bg-emerald-700 text-white rounded-2xl h-12 sm:h-14 px-6 sm:px-8 font-black uppercase text-xs tracking-widest shadow-xl shadow-emerald-100 transition-all active:scale-95 flex items-center justify-center gap-2 w-full sm:w-auto shrink-0"
         >
           {isSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
           {lang === 'en' ? 'Save All Changes' : 'Kaydi Isbedelka'}
@@ -199,23 +199,23 @@ export default function SettingsPage() {
         </div>
       ) : (
         <Tabs defaultValue="profile" className="w-full">
-          <TabsList className="bg-zinc-100 p-1.5 rounded-3xl h-auto mb-10 inline-flex w-full md:w-auto">
-            <TabsTrigger value="profile" className="rounded-2xl px-8 py-3 font-black text-xs uppercase tracking-widest data-[state=active]:bg-white data-[state=active]:shadow-sm">
-              <Store className="h-4 w-4 mr-2" />
-              {lang === 'en' ? 'Profile' : 'Summadda'}
+          <TabsList className="bg-zinc-100 p-1 rounded-2xl sm:rounded-3xl h-auto mb-6 sm:mb-10 grid grid-cols-3 w-full max-w-full">
+            <TabsTrigger value="profile" className="rounded-xl sm:rounded-2xl px-1 sm:px-4 py-2.5 sm:py-3 font-black text-[10px] sm:text-xs uppercase tracking-wider data-[state=active]:bg-white data-[state=active]:shadow-sm flex items-center justify-center truncate">
+              <Store className="h-3.5 w-3.5 mr-1 sm:mr-2 shrink-0 hidden xs:inline" />
+              <span>{lang === 'en' ? 'Profile' : 'Summadda'}</span>
             </TabsTrigger>
-            <TabsTrigger value="finance" className="rounded-2xl px-8 py-3 font-black text-xs uppercase tracking-widest data-[state=active]:bg-white data-[state=active]:shadow-sm">
-              <DollarSign className="h-4 w-4 mr-2" />
-              {lang === 'en' ? 'Financial' : 'Canshuurta'}
+            <TabsTrigger value="finance" className="rounded-xl sm:rounded-2xl px-1 sm:px-4 py-2.5 sm:py-3 font-black text-[10px] sm:text-xs uppercase tracking-wider data-[state=active]:bg-white data-[state=active]:shadow-sm flex items-center justify-center truncate">
+              <DollarSign className="h-3.5 w-3.5 mr-1 sm:mr-2 shrink-0 hidden xs:inline" />
+              <span>{lang === 'en' ? 'Financial' : 'Canshuurta'}</span>
             </TabsTrigger>
-            <TabsTrigger value="security" className="rounded-2xl px-8 py-3 font-black text-xs uppercase tracking-widest data-[state=active]:bg-white data-[state=active]:shadow-sm">
-              <ShieldCheck className="h-4 w-4 mr-2" />
-              {lang === 'en' ? 'Security' : 'Amniga'}
+            <TabsTrigger value="security" className="rounded-xl sm:rounded-2xl px-1 sm:px-4 py-2.5 sm:py-3 font-black text-[10px] sm:text-xs uppercase tracking-wider data-[state=active]:bg-white data-[state=active]:shadow-sm flex items-center justify-center truncate">
+              <ShieldCheck className="h-3.5 w-3.5 mr-1 sm:mr-2 shrink-0 hidden xs:inline" />
+              <span>{lang === 'en' ? 'Security' : 'Amniga'}</span>
             </TabsTrigger>
           </TabsList>
 
           <TabsContent value="profile" className="mt-0 focus-visible:outline-none">
-            <Card className="bg-white border-zinc-100 shadow-2xl shadow-zinc-100/50 rounded-[2.5rem] p-4 md:p-8">
+            <Card className="bg-white border-zinc-100 shadow-2xl shadow-zinc-100/50 rounded-3xl md:rounded-[2.5rem] p-4 sm:p-6 md:p-8 w-full max-w-full overflow-hidden">
               <div className="grid gap-8 md:grid-cols-2">
                  {/* Store Logo Section */}
                  <div className="md:col-span-2 flex flex-col sm:flex-row items-center gap-6 p-5 rounded-3xl bg-[#f9f9fb] border border-zinc-100">
@@ -280,7 +280,7 @@ export default function SettingsPage() {
           </TabsContent>
 
           <TabsContent value="finance" className="mt-0 focus-visible:outline-none">
-            <Card className="bg-white border-zinc-100 shadow-2xl shadow-zinc-100/50 rounded-[2.5rem] p-4 md:p-8">
+            <Card className="bg-white border-zinc-100 shadow-2xl shadow-zinc-100/50 rounded-3xl md:rounded-[2.5rem] p-4 sm:p-6 md:p-8 w-full max-w-full overflow-hidden">
               <div className="grid gap-8 md:grid-cols-2">
                  <div className="space-y-2">
                     <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest px-2">{lang === 'en' ? 'VAT Percentage (%)' : 'VAT / Canshuur (%)'}</label>
@@ -309,7 +309,7 @@ export default function SettingsPage() {
           </TabsContent>
 
           <TabsContent value="security" className="mt-0 focus-visible:outline-none">
-            <Card className="bg-white border-zinc-100 shadow-2xl shadow-zinc-100/50 rounded-[2.5rem] p-10 flex flex-col items-center text-center">
+            <Card className="bg-white border-zinc-100 shadow-2xl shadow-zinc-100/50 rounded-3xl md:rounded-[2.5rem] p-6 sm:p-10 flex flex-col items-center text-center w-full max-w-full overflow-hidden">
               <div className="h-20 w-20 bg-emerald-50 text-emerald-600 rounded-3xl flex items-center justify-center mb-6">
                  <ShieldCheck className="h-10 w-10" />
               </div>

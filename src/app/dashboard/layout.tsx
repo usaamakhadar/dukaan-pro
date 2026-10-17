@@ -195,7 +195,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   };
 
   return (
-    <div className="flex h-screen bg-white text-zinc-900 overflow-hidden font-sans print:h-auto print:overflow-visible">
+    <div className="flex h-screen bg-white text-zinc-900 overflow-hidden font-sans print:h-auto print:overflow-visible w-full max-w-[100vw] overscroll-none">
       
       {/* 1. SIDEBAR */}
       <aside className="w-[240px] bg-[#0b132b] text-zinc-400 flex flex-col justify-between hidden md:flex shrink-0 print:hidden">
@@ -245,10 +245,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       </aside>
 
       {/* 2. MAIN CONTENT AREA */}
-      <div className="flex-1 bg-[#f9f9fb] flex flex-col overflow-hidden print:bg-white print:overflow-visible relative">
+      <div className="flex-1 bg-[#f9f9fb] flex flex-col overflow-hidden print:bg-white print:overflow-visible relative w-full max-w-[100vw] min-w-0">
         
         {/* Top Header */}
-        <header className="h-20 px-4 md:px-8 flex items-center justify-between bg-white border-b border-zinc-200 shrink-0 shadow-sm z-10 relative print:hidden">
+        <header className="h-16 md:h-20 px-3 md:px-8 flex items-center justify-between bg-white border-b border-zinc-200 shrink-0 shadow-sm z-10 relative print:hidden w-full max-w-[100vw] overflow-hidden">
           
           <div className="flex items-center flex-1">
             {/* MOBILE MENU TRIGGER */}
@@ -304,7 +304,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             </div>
           </div>
 
-          <div className="flex items-center space-x-6">
+          <div className="flex items-center space-x-1.5 sm:space-x-3 md:space-x-6 shrink-0">
 
              {/* LANGUAGE TOGGLE */}
              <button onClick={toggleLang} className="flex items-center text-xs font-bold text-zinc-500 hover:text-blue-600 transition-colors bg-[#eef0f3] px-3 py-1.5 rounded-full">
@@ -340,6 +340,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             </DropdownMenu>
 
             {/* HELP DROP-DOWN */}
+            <div className="hidden sm:block">
             <DropdownMenu>
               <DropdownMenuTrigger className="cursor-pointer text-zinc-500 hover:text-zinc-800 transition-colors focus:outline-none">
                   <HelpCircle className="h-5 w-5" />
@@ -351,10 +352,11 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                 <DropdownMenuItem className="cursor-pointer"><Users className="mr-2 h-4 w-4"/> Support</DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
+            </div>
 
             {/* PROFILE DIRECT EDIT (DIALOG) */}
             <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-              <DialogTrigger className="flex items-center border-l border-zinc-200 pl-4 md:pl-6 space-x-2 md:space-x-3 cursor-pointer group focus:outline-none bg-transparent border-none text-left p-0">
+              <DialogTrigger className="flex items-center border-l border-zinc-200 pl-2 sm:pl-4 md:pl-6 space-x-1.5 sm:space-x-2 md:space-x-3 cursor-pointer group focus:outline-none bg-transparent border-none text-left p-0">
                   <div className="text-right transition-colors group-hover:text-blue-600 hidden sm:block">
                     <p className="text-sm font-semibold text-zinc-900 group-hover:text-blue-600 transition-colors uppercase">{userName}</p>
                     <p className="text-[10px] font-bold tracking-widest text-zinc-400 uppercase">{userRole === 'STORE MANAGER' && lang === 'so' ? t('store_manager') : userRole}</p>
@@ -416,7 +418,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         </header>
 
         {/* Dynamic Page Content */}
-        <main className="flex-1 overflow-y-auto p-4 md:p-8 pt-6 print:overflow-visible print:bg-white print:p-0">
+        <main className="flex-1 overflow-y-auto overflow-x-hidden p-3 sm:p-4 md:p-8 pt-4 sm:pt-6 print:overflow-visible print:bg-white print:p-0 w-full max-w-[100vw]">
           {children}
         </main>
       </div>
