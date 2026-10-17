@@ -18,6 +18,7 @@ import {
 } from "@/components/ui/sheet";
 import { toast } from "sonner";
 import { useLanguage } from "@/lib/i18n";
+import { NotificationsMenu } from "@/components/notifications-menu";
 import { createClient } from "@/lib/supabase/client";
 import BarcodeScannerCamera from "@/components/BarcodeScannerCamera";
 import useBarcodeScanner from "@/hooks/useBarcodeScanner";
@@ -757,7 +758,7 @@ export default function POSPage() {
                <Globe className="h-3.5 w-3.5 md:h-4 md:w-4 md:mr-2" />
                <span className="hidden md:inline">{lang === 'en' ? 'EN' : 'SO'}</span>
              </button>
-            <button className="text-zinc-500 hover:text-zinc-800 transition-colors hidden sm:block font-bold"><Bell className="h-5 w-5" /></button>
+            <div className="flex items-center"><NotificationsMenu /></div>
             
 
 

@@ -38,6 +38,7 @@ import { toast } from "sonner";
 import { useLanguage } from "@/lib/i18n";
 import { createClient } from "@/lib/supabase/client";
 import { Menu } from "lucide-react";
+import { NotificationsMenu } from "@/components/notifications-menu";
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -318,26 +319,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                {lang === 'en' ? 'Refresh' : 'Cusboonaysii'}
              </button>
             
-            {/* NOTIFICATION DROP-DOWN */}
-            <DropdownMenu>
-              <DropdownMenuTrigger className="relative cursor-pointer text-zinc-500 hover:text-zinc-800 transition-colors focus:outline-none">
-                  <Bell className="h-5 w-5" />
-                  <span className="absolute -top-1 -right-1 flex h-3 w-3">
-                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
-                    <span className="relative inline-flex rounded-full h-3 w-3 bg-red-500 border-2 border-white"></span>
-                  </span>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-64 rounded-xl shadow-lg">
-                <div className="px-2 py-1.5 text-sm font-semibold text-zinc-900">{t('notifications')}</div>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem className="cursor-pointer">
-                   🟢 Sneaker Pro stock is low
-                </DropdownMenuItem>
-                <DropdownMenuItem className="cursor-pointer">
-                   💰 New Sale #INV-102: $425.00
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+            {/* REAL DYNAMIC NOTIFICATIONS */}
+            <NotificationsMenu />
 
             {/* HELP DROP-DOWN */}
             <div className="hidden sm:block">

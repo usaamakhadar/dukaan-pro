@@ -109,7 +109,7 @@ export default function DashboardOverview() {
   ];
 
   return (
-    <div className="space-y-4 max-w-[1400px] mx-auto">
+    <div className="space-y-4 w-full max-w-[1400px] mx-auto min-w-0 overflow-x-hidden">
       <div className="mb-2 md:mb-4 flex justify-between items-center">
         <div>
            <h2 className="text-2xl md:text-3xl font-extrabold tracking-tight text-[#141b2d]">{t('overview')}</h2>
@@ -121,7 +121,7 @@ export default function DashboardOverview() {
         {stats.map((stat, i) => (
           <Card key={i} className="bg-white border-zinc-100 shadow-[0_2px_20px_-5px_rgba(0,0,0,0.05)] rounded-3xl transition-all hover:shadow-[0_8px_30px_-5px_rgba(0,0,0,0.1)] hover:-translate-y-1 cursor-pointer overflow-hidden relative group">
             <div className="absolute top-0 right-0 -mr-6 -mt-6 w-24 h-24 bg-blue-500 rounded-full blur-[40px] opacity-10 group-hover:opacity-20 transition-opacity" />
-            <CardHeader className="flex flex-row items-center justify-between pb-1 p-4 md:p-5 z-10 relative">
+            <CardHeader className="flex flex-row items-center justify-between pb-1 p-3 sm:p-4 md:p-5 z-10 relative">
               <CardTitle className="text-xs font-extrabold text-zinc-400 uppercase tracking-widest truncate mr-2">
                 {stat.title}
               </CardTitle>
@@ -129,8 +129,8 @@ export default function DashboardOverview() {
                  <stat.icon className="h-4 w-4 md:h-5 md:w-5" />
               </div>
             </CardHeader>
-            <CardContent className="p-4 md:p-5 pt-0 md:pt-0 z-10 relative">
-              <div className="text-xl md:text-3xl font-black text-[#141b2d] tracking-tight">
+            <CardContent className="p-3 sm:p-4 md:p-5 pt-0 md:pt-0 z-10 relative">
+              <div className="text-lg sm:text-2xl md:text-3xl font-black text-[#141b2d] tracking-tight">
                   {isLoading ? "..." : stat.value}
               </div>
               <p className={`text-xs mt-2 font-extrabold flex items-center ${stat.pos ? 'text-blue-600' : 'text-red-600'}`}>
@@ -142,16 +142,16 @@ export default function DashboardOverview() {
       </div>
 
       <div className="grid gap-4 grid-cols-1 lg:grid-cols-7 mb-4">
-        <Card className="lg:col-span-4 bg-white border-zinc-100 shadow-[0_2px_20px_-5px_rgba(0,0,0,0.05)] rounded-3xl overflow-hidden flex flex-col">
+        <Card className="lg:col-span-4 bg-white border-zinc-100 shadow-[0_2px_20px_-5px_rgba(0,0,0,0.05)] rounded-3xl overflow-hidden flex flex-col w-full min-w-0">
           <CardHeader className="border-b border-zinc-100/50 bg-zinc-50/50 py-3 px-5">
             <CardTitle className="text-[#141b2d] font-extrabold text-lg tracking-tight">{lang === 'en' ? 'Sales vs Expenses' : 'Iibka & Kharashka (7 Cisho)'}</CardTitle>
           </CardHeader>
-          <CardContent className="flex-1 min-h-[250px] md:h-[280px] p-4 pt-4">
+          <CardContent className="flex-1 min-h-[240px] md:h-[280px] p-2 sm:p-4 pt-4 w-full min-w-0 overflow-hidden">
             {isLoading ? (
                 <div className="w-full h-full flex items-center justify-center text-zinc-400 font-medium">Loading Chart...</div>
             ) : (
                 <ResponsiveContainer width="100%" height="100%">
-                  <AreaChart data={salesData} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
+                  <AreaChart data={salesData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
                     <defs>
                       <linearGradient id="colorSales" x1="0" y1="0" x2="0" y2="1">
                         <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.3}/>
