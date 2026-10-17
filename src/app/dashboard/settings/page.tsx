@@ -20,6 +20,7 @@ export default function SettingsPage() {
 
   // Form State
   const [storeName, setStoreName] = useState("");
+  const [storeLogo, setStoreLogo] = useState<string>("/images/store-logo.png");
   const [supportEmail, setSupportEmail] = useState("");
   const [receiptAddress, setReceiptAddress] = useState("");
   const [taxRate, setTaxRate] = useState("0");
@@ -30,6 +31,46 @@ export default function SettingsPage() {
   const [storePhone1, setStorePhone1] = useState("");
   const [storePhone2, setStorePhone2] = useState("");
   const [storePhone3, setStorePhone3] = useState("");
+
+  const handleLogoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      if (file.size > 2 * 1024 * 1024) {
+        toast.error(lang === 'en' ? "Image too large! Max 2MB." : "Sawirka waa uu weyn yahay! Fadlan keen mid ka yar 2MB.");
+        return;
+      }
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        const img = new (window as any).Image();
+        img.src = reader.result;
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          const MAX_SIZE = 160;
+          let width = img.width;
+          let height = img.height;
+          if (width > height) {
+            if (width > MAX_SIZE) {
+              height *= MAX_SIZE / width;
+              width = MAX_SIZE;
+            }
+          } else {
+            if (height > MAX_SIZE) {
+              width *= MAX_SIZE / height;
+              height = MAX_SIZE;
+            }
+          }
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext('2d');
+          ctx?.drawImage(img, 0, 0, width, height);
+          const dataUrl = canvas.toDataURL('image/png', 0.85);
+          setStoreLogo(dataUrl);
+          toast.success(lang === 'en' ? "Store logo updated!" : "Logo-ga waa la diyaariyay!");
+        };
+      };
+      reader.readAsDataURL(file);
+    }
+  };
 
   useEffect(() => {
     fetchSettings();
@@ -64,6 +105,7 @@ export default function SettingsPage() {
          
          try {
             const footerData = JSON.parse(settingsData.receipt_footer || "{}");
+            setStoreLogo(footerData.logo || "/images/store-logo.png");
             setSupportEmail(footerData.email || "");
             setServiceFee(footerData.fee || "0");
             setZaadNumber(footerData.zaad || "");
@@ -72,6 +114,7 @@ export default function SettingsPage() {
             setStorePhone2(footerData.phone2 || "");
             setStorePhone3(footerData.phone3 || "");
          } catch {
+            setStoreLogo("/images/store-logo.png");
             setSupportEmail("");
             setServiceFee("0");
             setZaadNumber("");
@@ -103,6 +146,7 @@ export default function SettingsPage() {
 
     // 2. Update tenant_settings
     const footerPayload = JSON.stringify({ 
+        logo: storeLogo,
         email: supportEmail, 
         fee: serviceFee,
         zaad: zaadNumber,
@@ -173,6 +217,25 @@ export default function SettingsPage() {
           <TabsContent value="profile" className="mt-0 focus-visible:outline-none">
             <Card className="bg-white border-zinc-100 shadow-2xl shadow-zinc-100/50 rounded-[2.5rem] p-4 md:p-8">
               <div className="grid gap-8 md:grid-cols-2">
+                 {/* Store Logo Section */}
+                 <div className="md:col-span-2 flex flex-col sm:flex-row items-center gap-6 p-5 rounded-3xl bg-[#f9f9fb] border border-zinc-100">
+                    <div className="w-20 h-20 rounded-full border-2 border-white shadow-md overflow-hidden bg-white shrink-0 flex items-center justify-center p-1">
+                      <img src={storeLogo} alt="Store Logo" className="w-full h-full object-contain rounded-full" />
+                    </div>
+                    <div className="space-y-1.5 flex-1 text-center sm:text-left">
+                      <label className="text-xs font-black text-[#141b2d] uppercase tracking-wider block">
+                        {lang === 'en' ? 'Store Logo (Receipt & Branding)' : 'Logo-ga Dukaanka (Rasiidhka & Summadda)'}
+                      </label>
+                      <p className="text-[11px] text-zinc-500">
+                        {lang === 'en' ? 'This logo will appear centered at the very top of your printed receipts.' : 'Sawirkan wuxuu ka muuqan doonaa dusha sare ee rasiidhada aad daabacdo.'}
+                      </p>
+                      <label className="inline-block mt-2 cursor-pointer bg-white hover:bg-zinc-100 text-[#141b2d] font-bold text-xs px-4 py-2 rounded-xl border border-zinc-200 transition-colors shadow-sm">
+                        <span>{lang === 'en' ? 'Upload New Logo' : 'Bedel Logo-ga Dukaanka'}</span>
+                        <input type="file" accept="image/*" onChange={handleLogoUpload} className="hidden" />
+                      </label>
+                    </div>
+                 </div>
+
                  <div className="space-y-2">
                     <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest px-2">{lang === 'en' ? 'Store Name' : 'Magaca Dukaanka'}</label>
                     <Input value={storeName} onChange={(e) => setStoreName(e.target.value)} className="bg-[#f9f9fb] border-none h-14 rounded-2xl px-6 text-[#141b2d] font-black focus:ring-2 focus:ring-[#141b2d]/5" />

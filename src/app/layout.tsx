@@ -11,6 +11,11 @@ export const metadata: Metadata = {
   title: "Dukaan Pro | Premium Retail",
   description: "Advanced Multi-tenant Point of Sale system.",
   manifest: "/manifest.json",
+  icons: {
+    icon: "/icons/icon-192.png",
+    shortcut: "/icons/icon-192.png",
+    apple: "/apple-touch-icon.png",
+  },
   appleWebApp: {
     capable: true,
     title: "Dukaan Pro",

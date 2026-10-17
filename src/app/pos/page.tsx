@@ -254,6 +254,16 @@ export default function POSPage() {
     }
   };
 
+  const getStoreLogo = () => {
+    if (tenantSettings?.receipt_footer) {
+      try {
+        const parsed = JSON.parse(tenantSettings.receipt_footer);
+        if (parsed.logo) return parsed.logo;
+      } catch (e) {}
+    }
+    return "/images/store-logo.png";
+  };
+
   const handleSaveProfile = async () => {
     setUserName(editName);
     setUserRole(editRole);
@@ -589,11 +599,23 @@ export default function POSPage() {
           </nav>
         </div>
         
-        <div className="p-6">
+        <div className="p-6 space-y-3">
           <Button 
+            onClick={() => {
+              setCart([]);
+              setSelectedCustomer(null);
+            }}
             className="w-full bg-[#8fa4cf]/80 hover:bg-[#8fa4cf] text-[#0b132b] font-semibold py-6 rounded-xl shadow-lg transition-transform active:scale-95"
           >
             {t('new_sale') || "New Sale"}
+          </Button>
+          <Button 
+            variant="ghost" 
+            onClick={handleLogout}
+            className="w-full text-zinc-400 hover:text-red-400 hover:bg-red-500/10 justify-start py-5 px-4 rounded-xl transition-all font-semibold"
+          >
+            <LogOut className="h-5 w-5 mr-3 shrink-0" />
+            <span>{lang === 'en' ? 'Logout' : 'Ka bax'}</span>
           </Button>
         </div>
       </aside>
@@ -613,27 +635,39 @@ export default function POSPage() {
                     </Button>
                   }
                />
-               <SheetContent side="left" className="bg-[#0b132b] border-none text-zinc-400 p-0 w-[240px]">
-                  <SheetHeader className="p-8 pb-10 text-left border-none">
-                     <SheetTitle className="text-xl font-bold text-white tracking-wide">Dukaan Pro</SheetTitle>
-                     <p className="text-[10px] text-zinc-500 font-bold tracking-widest mt-1 uppercase">POS MOBILE</p>
-                  </SheetHeader>
-                  <nav className="px-4 space-y-2">
-                    {sidebarLinks.map((link) => (
-                      <Link href={link.href} key={link.label}>
-                        <button 
-                          className={`w-full flex items-center px-4 py-4 rounded-xl transition-all ${
-                            link.active 
-                              ? "bg-[#182343] text-white font-medium" 
-                              : "hover:bg-[#182343]/50 hover:text-white"
-                          }`}
-                        >
-                          <link.icon className="h-5 w-5 mr-4" />
-                          {link.label}
-                        </button>
-                      </Link>
-                    ))}
-                  </nav>
+               <SheetContent side="left" className="bg-[#0b132b] border-none text-zinc-400 p-0 w-[240px] flex flex-col justify-between">
+                  <div>
+                    <SheetHeader className="p-8 pb-10 text-left border-none">
+                       <SheetTitle className="text-xl font-bold text-white tracking-wide">Dukaan Pro</SheetTitle>
+                       <p className="text-[10px] text-zinc-500 font-bold tracking-widest mt-1 uppercase">POS MOBILE</p>
+                    </SheetHeader>
+                    <nav className="px-4 space-y-2">
+                      {sidebarLinks.map((link) => (
+                        <Link href={link.href} key={link.label}>
+                          <button 
+                            className={`w-full flex items-center px-4 py-4 rounded-xl transition-all ${
+                              link.active 
+                                ? "bg-[#182343] text-white font-medium" 
+                                : "hover:bg-[#182343]/50 hover:text-white"
+                            }`}
+                          >
+                            <link.icon className="h-5 w-5 mr-4" />
+                            {link.label}
+                          </button>
+                        </Link>
+                      ))}
+                    </nav>
+                  </div>
+                  <div className="p-4 border-t border-zinc-800">
+                    <Button 
+                      variant="ghost" 
+                      onClick={handleLogout}
+                      className="w-full text-zinc-400 hover:text-red-400 hover:bg-red-500/10 justify-start py-4 px-4 rounded-xl transition-all font-semibold"
+                    >
+                      <LogOut className="h-5 w-5 mr-3" />
+                      <span>{lang === 'en' ? 'Logout' : 'Ka bax'}</span>
+                    </Button>
+                  </div>
                </SheetContent>
             </Sheet>
 
@@ -656,15 +690,28 @@ export default function POSPage() {
               />
             </div>
           </div>
-          <div className="flex items-center space-x-2 md:space-x-4 ml-2 md:ml-0">
+          <div className="flex items-center space-x-2 md:space-x-3 ml-2 md:ml-0">
              <button onClick={toggleLang} className="flex items-center text-[10px] md:text-xs font-bold text-zinc-500 hover:text-blue-600 transition-colors bg-[#eef0f3] px-2 md:px-3 py-1.5 rounded-full">
                <Globe className="h-3.5 w-3.5 md:h-4 md:w-4 md:mr-2" />
                <span className="hidden md:inline">{lang === 'en' ? 'EN' : 'SO'}</span>
              </button>
             <button className="text-zinc-500 hover:text-zinc-800 transition-colors hidden sm:block font-bold"><Bell className="h-5 w-5" /></button>
+            
+            {/* Quick One-Click Logout in Header */}
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleLogout}
+              className="text-zinc-500 hover:text-red-600 hover:bg-red-50 rounded-xl px-2 md:px-3 py-1.5 h-9 font-bold text-xs transition-colors flex items-center"
+              title={lang === 'en' ? 'Logout' : 'Ka bax'}
+            >
+              <LogOut className="h-4 w-4 md:mr-1.5 text-zinc-500 hover:text-red-600" />
+              <span className="hidden md:inline">{lang === 'en' ? 'Logout' : 'Ka bax'}</span>
+            </Button>
+
             {/* PROFILE EDIT (DIALOG) */}
             <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-              <DialogTrigger className="flex items-center border-l border-zinc-200 pl-4 md:pl-6 space-x-2 md:space-x-3 cursor-pointer group focus:outline-none bg-transparent border-none text-left p-0">
+              <DialogTrigger className="flex items-center border-l border-zinc-200 pl-3 md:pl-4 space-x-2 md:space-x-3 cursor-pointer group focus:outline-none bg-transparent border-none text-left p-0">
                   <div className="text-right transition-colors group-hover:text-blue-600 hidden sm:block">
                     <p className="text-sm font-semibold text-zinc-900 group-hover:text-blue-600 transition-colors uppercase">{userName}</p>
                     <p className="text-[10px] font-bold tracking-widest text-zinc-400 uppercase">{userRole === 'STORE MANAGER' && lang === 'so' ? t('store_manager') : userRole}</p>
@@ -1117,150 +1164,197 @@ export default function POSPage() {
         </div>
       )}
 
-       {/* 6. RECEIPT MODAL (Authentic Somaliland Style) */}
+       {/* 6. RECEIPT MODAL (Authentic POS Style with Store Logo) */}
        {showReceipt && lastSaleData && (
          <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 overflow-y-auto">
-            <div className="bg-white text-[#141b2d] w-full max-w-[340px] shadow-2xl relative overflow-hidden font-mono text-[12px] border border-zinc-200 m-auto mx-auto my-12 flex flex-col max-h-[90vh]">
-                {/* Success Banner (UI only) */}
-                <div className="bg-green-600 text-white text-center py-2 text-[10px] font-bold uppercase tracking-widest shrink-0 relative flex justify-center items-center">
-                   <span>{lang === 'en' ? 'Transaction Success' : 'Iibku waa xarooday'}</span>
-                   <button 
-                      onClick={() => setShowReceipt(false)} 
-                      className="absolute right-2 text-white hover:text-red-200 font-extrabold text-[10px] p-1 px-2.5 bg-black/25 rounded transition-colors"
-                   >
-                      ✕ {lang === 'en' ? 'Close' : 'Xidh'}
-                   </button>
-                </div>
+            <div className="bg-white text-[#141b2d] w-full max-w-[360px] shadow-2xl relative overflow-hidden font-mono text-[12px] border border-zinc-200 m-auto mx-auto my-8 flex flex-col max-h-[92vh] rounded-2xl">
+                
+                {/* Circular Close Button (top-right like sample) */}
+                <button 
+                  onClick={() => setShowReceipt(false)} 
+                  className="absolute top-3 right-3 z-30 w-8 h-8 rounded-full bg-zinc-100 hover:bg-zinc-200 text-zinc-500 hover:text-zinc-800 flex items-center justify-center transition-colors shadow-sm cursor-pointer"
+                  title={lang === 'en' ? 'Close' : 'Xidh'}
+                >
+                  <X className="w-4 h-4" />
+                </button>
 
                 <div id="receipt-print-area" className="p-5 overflow-y-auto custom-scrollbar bg-white print-target flex-1">
-                  {/* Thermal Header */}
-                  <div className="text-center space-y-1 mb-4">
-                     <div className="flex justify-between text-[9px] border-b border-zinc-200 pb-0.5 mb-0.5 font-mono font-bold">
-                        <span>{lastSaleData.date}</span>
-                        <span>Sales Receipt #{lastSaleData.id.slice(0, 8).toUpperCase()}</span>
-                     </div>
-                     <div className="flex justify-between text-[9px] border-b border-black pb-1 mb-2 font-mono font-bold">
-                        <span>Store: {storeName || "DKN"}</span>
-                        <span>Cashier: {userName || "Cashier"}</span>
-                     </div>
-
-                     <h2 className="text-sm font-black uppercase leading-tight mt-1">{storeName || "MY STORE"}</h2>
-                     {tenantSettings?.receipt_header && (
-                        <p className="text-[10px] font-medium leading-tight whitespace-pre-wrap">{tenantSettings.receipt_header}</p>
-                     )}
-
-                     {(() => {
-                        if (!tenantSettings?.receipt_footer) return null;
-                        try {
-                           const parsedFooter = JSON.parse(tenantSettings.receipt_footer);
-                           const hasPhones = parsedFooter.phone1 || parsedFooter.phone2 || parsedFooter.phone3;
-                           const hasPayments = parsedFooter.zaad || parsedFooter.edahab;
-                           
-                           return (
-                              <div className="text-[9px] font-bold leading-tight font-mono space-y-0.5 mt-1">
-                                 {hasPhones && (
-                                    <p>
-                                       Tel: {[parsedFooter.phone1, parsedFooter.phone2, parsedFooter.phone3].filter(Boolean).join(" | ")}
-                                    </p>
-                                 )}
-                                 {hasPayments && (
-                                    <p>
-                                       {[
-                                          parsedFooter.zaad ? `ZAAD: ${parsedFooter.zaad}` : null,
-                                          parsedFooter.edahab ? `E-Dahab : ${parsedFooter.edahab}` : null
-                                       ].filter(Boolean).join(" // ")}
-                                    </p>
-                                 )}
-                              </div>
-                           );
-                        } catch (e) {
-                           return null;
-                        }
-                     })()}
+                  {/* Top Circular Store Logo */}
+                  <div className="flex justify-center mb-2.5">
+                    <div className="w-16 h-16 rounded-full border border-zinc-200 overflow-hidden shadow-sm flex items-center justify-center p-1 bg-white">
+                      <img 
+                        src={getStoreLogo()} 
+                        alt="Store Logo" 
+                        className="w-full h-full object-contain rounded-full" 
+                      />
+                    </div>
                   </div>
 
+                  {/* Store Name & Header Info */}
+                  <div className="text-center space-y-0.5 mb-2">
+                    <h2 className="text-base font-black uppercase tracking-wider text-[#141b2d] leading-tight">
+                      {storeName || "DUKAAN PRO"}
+                    </h2>
+                    <p className="text-[11px] text-zinc-600 font-medium leading-tight">
+                      {tenantSettings?.receipt_header || (lang === 'en' ? 'Quality Products & Services' : 'Tayada & Adeeg Hufan')}
+                    </p>
+                    <p className="text-[10px] text-zinc-500 font-medium pt-0.5">
+                      {lang === 'en' ? 'Thank You & Welcome Back' : 'Soo noqod wanaagsan Macmiil'}
+                    </p>
+                  </div>
+
+                  {/* Solid Divider */}
+                  <div className="border-b border-black my-2"></div>
+
+                  {/* Date, Order ID & Cashier */}
+                  <div className="space-y-0.5 text-[10px] font-mono font-bold leading-tight">
+                    <div className="flex justify-between items-center">
+                      <span>Date: {lastSaleData.date}</span>
+                      <span>Order ID: #{lastSaleData.id.slice(0, 8).toUpperCase()}</span>
+                    </div>
+                    <div className="text-left">
+                      <span>Cashier: {userName || "Cashier"}</span>
+                    </div>
+                  </div>
+
+                  {/* Solid Divider */}
+                  <div className="border-b border-black my-2"></div>
+
                   {/* Table Header */}
-                  <div className="flex justify-between border-y border-black py-1 font-black text-[11px] mb-2 uppercase">
-                     <span className="w-1/2 text-left">Magaca Shayga</span>
-                     <span className="w-1/6 text-center">Qty</span>
-                     <span className="w-1/6 text-right">Price</span>
-                     <span className="w-1/6 text-right">Amount</span>
+                  <div className="flex justify-between border-b border-black pb-1 mb-2 font-black text-[11px] uppercase">
+                    <span className="w-1/2 text-left">MAGACA SHAYGA</span>
+                    <span className="w-1/6 text-center">QTY</span>
+                    <span className="w-1/6 text-right">PRICE</span>
+                    <span className="w-1/6 text-right">AMOUNT</span>
                   </div>
 
                   {/* Items */}
-                  <div className="space-y-1 mb-4 border-b border-zinc-100 pb-2">
-                     {lastSaleData.items.map((item: any, idx: number) => (
-                        <div key={idx} className="flex justify-between items-start leading-tight">
-                           <span className="w-1/2 text-left font-bold uppercase text-[10px]">{item.name}</span>
-                           <span className="w-1/6 text-center">{item.qty}</span>
-                           <span className="w-1/6 text-right">${item.price.toFixed(2)}</span>
-                           <span className="w-1/6 text-right font-bold">${(item.price * item.qty).toFixed(2)}</span>
-                        </div>
-                     ))}
+                  <div className="space-y-1.5 mb-3">
+                    {lastSaleData.items.map((item: any, idx: number) => (
+                      <div key={idx} className="flex justify-between items-start text-[10.5px] leading-tight">
+                        <span className="w-1/2 text-left font-bold uppercase">{item.name}</span>
+                        <span className="w-1/6 text-center">{item.qty}</span>
+                        <span className="w-1/6 text-right">${item.price.toFixed(2)}</span>
+                        <span className="w-1/6 text-right font-black">${(item.price * item.qty).toFixed(2)}</span>
+                      </div>
+                    ))}
                   </div>
 
                   {/* Totals */}
-                  <div className="space-y-0.5 border-b border-black pb-2 mb-2">
-                     <div className="flex justify-between">
-                        <span className="font-bold">Subtotal:</span>
-                        <span>${lastSaleData.subtotal.toFixed(2)}</span>
-                     </div>
-                     <div className="flex justify-between text-[10px]">
-                        <span>Local Sales Tax (0%):</span>
-                        <span>+ $0.00</span>
-                     </div>
-                     <div className="flex justify-between font-black text-[14px] mt-1 pt-1 border-t border-zinc-100">
-                        <span>RECEIPT TOTAL:</span>
-                        <span>${lastSaleData.total.toFixed(2)}</span>
-                     </div>
-                     <div className="flex justify-between font-bold text-[11px] text-zinc-500">
-                        <span>TOTAL (SLSH):</span>
-                        <span>{ (lastSaleData.total * (tenantSettings?.exchange_rate || 8500)).toLocaleString() } SH</span>
-                     </div>
+                  <div className="space-y-1 border-t border-zinc-200 pt-2 mb-2">
+                    <div className="flex justify-between text-[11px]">
+                      <span className="font-bold">Subtotal:</span>
+                      <span className="font-medium">${lastSaleData.subtotal.toFixed(2)}</span>
+                    </div>
+                    <div className="flex justify-between text-[10.5px]">
+                      <span>Local Sales Tax ({tenantSettings?.tax_rate || 0}%):</span>
+                      <span>+ ${(lastSaleData.subtotal * ((tenantSettings?.tax_rate || 0) / 100)).toFixed(2)}</span>
+                    </div>
+                    <div className="flex justify-between text-[13px] font-black pt-1 border-t border-dashed border-zinc-300">
+                      <span>RECEIPT TOTAL:</span>
+                      <span>${lastSaleData.total.toFixed(2)}</span>
+                    </div>
+                    <div className="flex justify-between text-[11px] font-bold text-zinc-600">
+                      <span>TOTAL (SLSH):</span>
+                      <span>{(Math.round(lastSaleData.total * (tenantSettings?.exchange_rate || 8500))).toLocaleString()} SH</span>
+                    </div>
                   </div>
 
-                  {/* Payment */}
-                  <div className="mb-4">
-                     <p className="font-black text-[13px] uppercase">{lastSaleData.paymentMethod}: ${lastSaleData.total.toFixed(2)}</p>
+                  {/* Solid Divider */}
+                  <div className="border-b border-black my-2"></div>
+
+                  {/* Payment Status */}
+                  <div className="mb-2 text-left font-black text-[12px] uppercase">
+                    {lastSaleData.paymentMethod?.toLowerCase().includes('deyn') || lastSaleData.paymentMethod?.toLowerCase().includes('debt') ? (
+                      <span className="text-red-600 font-black">UNPAID: ${lastSaleData.total.toFixed(2)}</span>
+                    ) : (
+                      <span>PAID ({lastSaleData.paymentMethod}): ${lastSaleData.total.toFixed(2)}</span>
+                    )}
                   </div>
 
-                  {/* Footer Message */}
-                  <div className="text-center space-y-1">
-                     <p className="italic text-[10px] font-bold">Hubso Alaabtaada intaanad labixin</p>
-                  </div>
-                     
-                     {/* Dynamic Barcode Placeholder */}
-                     <div className="flex flex-col items-center pt-2">
-                        <div className="w-full h-10 bg-zinc-100 border-x-2 border-black flex items-center justify-center relative">
-                           <div className="absolute inset-x-0 top-0 bottom-0 flex justify-between px-1 opacity-20">
-                              {[...Array(20)].map((_, i) => (
-                                 <div key={i} className={`w-[1px] bg-black h-full ${i % 3 === 0 ? 'w-[2px]' : ''}`}></div>
-                              ))}
-                           </div>
-                           <span className="bg-white/80 px-2 text-[10px] font-black z-10">{lastSaleData.id.slice(0, 8).toUpperCase()}</span>
+                  {/* Contact Numbers / Payment Details */}
+                  {(() => {
+                    if (!tenantSettings?.receipt_footer) return null;
+                    try {
+                      const parsedFooter = JSON.parse(tenantSettings.receipt_footer);
+                      const hasPhones = parsedFooter.phone1 || parsedFooter.phone2 || parsedFooter.phone3;
+                      const hasPayments = parsedFooter.zaad || parsedFooter.edahab;
+                      if (!hasPhones && !hasPayments) return null;
+                      return (
+                        <div className="text-[9px] font-bold font-mono space-y-0.5 my-2 pt-1 border-t border-dashed border-zinc-200">
+                          {hasPhones && (
+                            <p>Tel: {[parsedFooter.phone1, parsedFooter.phone2, parsedFooter.phone3].filter(Boolean).join(" | ")}</p>
+                          )}
+                          {hasPayments && (
+                            <p>
+                              {[
+                                parsedFooter.zaad ? `ZAAD: ${parsedFooter.zaad}` : null,
+                                parsedFooter.edahab ? `E-Dahab: ${parsedFooter.edahab}` : null
+                              ].filter(Boolean).join(" // ")}
+                            </p>
+                          )}
                         </div>
-                     </div>
-                  </div>
+                      );
+                    } catch (e) {
+                      return null;
+                    }
+                  })()}
 
-                {/* UI Buttons */}
+                  {/* Notice */}
+                  <p className="italic font-bold text-[10.5px] uppercase tracking-wider text-center my-3">
+                    HUBSO ALAABTAADA INTAANAD LABIXIN
+                  </p>
+
+                  {/* Barcode with Order ID */}
+                  <div className="flex flex-col items-center pt-1 pb-1">
+                    <div className="w-full h-11 bg-white border-x-2 border-black flex items-center justify-center relative overflow-hidden">
+                      <div className="absolute inset-x-0 top-0 bottom-0 flex justify-between px-2 opacity-75">
+                        {[...Array(42)].map((_, i) => (
+                          <div 
+                            key={i} 
+                            className={`bg-black h-full ${i % 7 === 0 ? 'w-[3px]' : i % 3 === 0 ? 'w-[2px]' : 'w-[1px]'}`}
+                          />
+                        ))}
+                      </div>
+                      <span className="bg-white px-2 py-0.5 text-[10px] font-black z-10 border border-zinc-200 rounded">
+                        {lastSaleData.id.slice(0, 8).toUpperCase()}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* UI Action Buttons */}
                 <div className="p-4 bg-zinc-50 border-t border-zinc-100 flex flex-col gap-2 shrink-0">
-                   <Button onClick={() => window.print()} className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-lg h-11 shadow-sm text-sm">
+                   <Button 
+                     onClick={() => window.print()} 
+                     className="w-full bg-[#009b5a] hover:bg-[#00854d] text-white font-bold rounded-xl h-12 shadow-sm text-sm active:scale-98 transition-all"
+                   >
                       🖨️ {lang === 'en' ? 'Print Receipt' : 'Daabac Rasiidhka'}
                    </Button>
                    <div className="grid grid-cols-2 gap-2">
-                      <Button onClick={() => handleDownloadReceipt('image')} className="bg-[#141b2d] hover:bg-black text-white font-bold rounded-lg h-10 shadow-sm text-xs">
-                         ⬇️ {lang === 'en' ? 'Save Image' : 'Soo deji (Sawir)'}
+                      <Button 
+                        onClick={() => handleDownloadReceipt('image')} 
+                        className="bg-[#141b2d] hover:bg-black text-white font-bold rounded-xl h-11 shadow-sm text-xs active:scale-98 transition-all"
+                      >
+                         ⬇️ {lang === 'en' ? 'Download (Image)' : 'Soo deji (Sawir)'}
                       </Button>
-                      <Button onClick={() => handleDownloadReceipt('pdf')} className="border-blue-200 bg-blue-50 text-blue-700 hover:bg-blue-100 font-bold rounded-lg h-10 shadow-sm text-xs">
-                         📄 {lang === 'en' ? 'Save PDF' : 'Soo deji (PDF)'}
+                      <Button 
+                        onClick={() => handleDownloadReceipt('pdf')} 
+                        className="border border-blue-200 bg-[#edf5ff] text-[#2563eb] hover:bg-blue-100 font-bold rounded-xl h-11 shadow-sm text-xs active:scale-98 transition-all"
+                      >
+                         📄 {lang === 'en' ? 'Download (PDF)' : 'Soo deji (PDF)'}
                       </Button>
                    </div>
-                   <div className="grid grid-cols-2 gap-2">
-                      <Button variant="outline" onClick={() => setShowReceipt(false)} className="border-zinc-200 text-zinc-600 font-bold rounded-lg h-10 text-xs w-full">
+                   <div className="grid grid-cols-2 gap-2 pt-1">
+                      <Button 
+                        variant="outline" 
+                        onClick={() => setShowReceipt(false)} 
+                        className="border-zinc-200 text-zinc-600 font-bold rounded-xl h-10 text-xs w-full hover:bg-zinc-100"
+                      >
                          ⬅️ {lang === 'en' ? 'Back to POS' : 'Ku noqo Iibka'}
                       </Button>
                       <Link href="/dashboard" className="w-full">
-                         <Button className="w-full bg-[#0b132b] hover:bg-black text-white font-bold rounded-lg h-10 text-xs">
+                         <Button className="w-full bg-[#0b132b] hover:bg-[#182343] text-white font-bold rounded-xl h-10 text-xs">
                             📊 {lang === 'en' ? 'Dashboard' : 'Tag Dashboard'}
                          </Button>
                       </Link>

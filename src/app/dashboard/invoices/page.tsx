@@ -103,6 +103,16 @@ export default function InvoicesPage() {
     sale.payment_method.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
+  const getStoreLogo = () => {
+    if (tenantSettings?.receipt_footer) {
+      try {
+        const parsed = JSON.parse(tenantSettings.receipt_footer);
+        if (parsed.logo) return parsed.logo;
+      } catch (e) {}
+    }
+    return "/images/store-logo.png";
+  };
+
   const handlePrintReceipt = async () => {
     if (!receiptRef.current || !selectedSale) return;
     toast.loading(lang === 'en' ? "Preparing Receipt..." : "Waa la diyaarinayaa (Thermal)...");
@@ -257,27 +267,46 @@ export default function InvoicesPage() {
                {/* ----------------- THERMAL RECEIPT ----------------- */}
                <Card ref={receiptRef} className={`bg-white text-[#141b2d] border border-zinc-200 shadow-2xl relative overflow-hidden font-mono text-[12px] mx-auto w-full max-w-[340px]`}>
                  <div className="p-5">
-                     {/* Thermal Header */}
-                     <div className="text-center space-y-0.5 mb-4">
-                         <p className="font-bold text-[10px] uppercase">Sales Receipt #{selectedSale.id.slice(0, 8).toUpperCase()}</p>
-                         <div className="flex justify-between text-[10px] border-b border-zinc-100 pb-1 mb-1 font-bold">
-                            <span>{new Date(selectedSale.created_at).toLocaleDateString()}</span>
-                            <span>{new Date(selectedSale.created_at).toLocaleTimeString()}</span>
-                         </div>
-                         <div className="flex justify-between text-[9px] border-b border-zinc-100 pb-1 mb-1 font-bold">
-                            <span>Store: {storeName || "DKN"}</span>
-                            <span>Cashier: {cashierMap[selectedSale.cashier_id] || "Cashier"}</span>
-                         </div>
-                         <h2 className="text-lg font-black uppercase leading-tight mt-1">{storeName || "DKN STORE"}</h2>
-                        {tenantSettings?.receipt_header && typeof tenantSettings.receipt_header === 'string' && !tenantSettings.receipt_header.includes('{') ? (
-                           <p className="text-[10px] font-medium leading-tight whitespace-pre-wrap">{tenantSettings.receipt_header}</p>
-                        ) : (
-                           <>
-                              <p className="text-[10px] font-medium leading-tight">Mogadishu, Somalia</p>
-                              <p className="text-[10px] font-medium">Tel: Update in Settings</p>
-                           </>
-                        )}
+                     {/* Top Circular Store Logo */}
+                     <div className="flex justify-center mb-2.5">
+                       <div className="w-16 h-16 rounded-full border border-zinc-200 overflow-hidden shadow-sm flex items-center justify-center p-1 bg-white">
+                         <img 
+                           src={getStoreLogo()} 
+                           alt="Store Logo" 
+                           className="w-full h-full object-contain rounded-full" 
+                         />
+                       </div>
                      </div>
+
+                     {/* Store Header */}
+                     <div className="text-center space-y-0.5 mb-2">
+                       <h2 className="text-base font-black uppercase tracking-wider text-[#141b2d] leading-tight">
+                         {storeName || "DUKAAN PRO"}
+                       </h2>
+                       <p className="text-[11px] text-zinc-600 font-medium leading-tight">
+                         {tenantSettings?.receipt_header || (lang === 'en' ? 'Quality Products & Services' : 'Tayada & Adeeg Hufan')}
+                       </p>
+                       <p className="text-[10px] text-zinc-500 font-medium pt-0.5">
+                         {lang === 'en' ? 'Thank You & Welcome Back' : 'Soo noqod wanaagsan Macmiil'}
+                       </p>
+                     </div>
+
+                     {/* Solid Divider */}
+                     <div className="border-b border-black my-2"></div>
+
+                     {/* Date, Order ID & Cashier */}
+                     <div className="space-y-0.5 text-[10px] font-mono font-bold leading-tight">
+                       <div className="flex justify-between items-center">
+                         <span>Date: {new Date(selectedSale.created_at).toLocaleDateString()}, {new Date(selectedSale.created_at).toLocaleTimeString()}</span>
+                         <span>Order ID: #{selectedSale.id.slice(0, 8).toUpperCase()}</span>
+                       </div>
+                       <div className="text-left">
+                         <span>Cashier: {cashierMap[selectedSale.cashier_id] || "Cashier"}</span>
+                       </div>
+                     </div>
+
+                     {/* Solid Divider */}
+                     <div className="border-b border-black my-2"></div>
 
                      {/* Table Header */}
                      <div className="flex justify-between border-y border-black py-1 font-black text-[11px] mb-2 uppercase">
