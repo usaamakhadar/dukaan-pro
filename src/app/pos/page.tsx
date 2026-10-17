@@ -23,6 +23,7 @@ import BarcodeScannerCamera from "@/components/BarcodeScannerCamera";
 import useBarcodeScanner from "@/hooks/useBarcodeScanner";
 import { barcodeService } from "@/lib/barcode/barcode-service";
 import { playErrorBeep } from "@/lib/barcode/scanner-audio";
+import { generateDailyOrderId } from "@/lib/order-utils";
 import { toPng } from 'html-to-image';
 import download from 'downloadjs';
 import { jsPDF } from 'jspdf';
@@ -430,9 +431,37 @@ export default function POSPage() {
       
       const saleData = { id: newSaleId };
 
+      // Calculate sequential daily order index (e.g. 01-2026-10-18)
+      let orderIndexToday = 1;
+      try {
+        const startOfToday = new Date();
+        startOfToday.setHours(0, 0, 0, 0);
+        const { count } = await supabase
+          .from('sales')
+          .select('id', { count: 'exact', head: true })
+          .eq('tenant_id', tenantId)
+          .gte('created_at', startOfToday.toISOString());
+        if (count && count > 0) {
+          orderIndexToday = count;
+        }
+      } catch (err) {
+        console.warn("Could not calculate order index:", err);
+      }
+
+      const formattedOrderId = generateDailyOrderId(new Date(), orderIndexToday);
+
+      // Save order_number to sales table
+      try {
+        await supabase
+          .from('sales')
+          .update({ order_number: formattedOrderId })
+          .eq('id', newSaleId);
+      } catch (e) {}
+
       // 5. Prepare Receipt Data BEFORE clearing state
       const receiptDetails = {
          id: saleData.id,
+         orderId: formattedOrderId,
          customer: selectedCustomer?.name || (lang === 'en' ? 'Cash Customer' : 'Macmiil Lacag'),
          total: total,
          paymentMethod: paymentMethod === 'deyn' ? (lang === 'en' ? 'Debt' : 'Deyn') : paymentMethod.toUpperCase(),
@@ -484,7 +513,7 @@ export default function POSPage() {
                position: 'relative'
             }
          });
-         const fileName = `receipt-${lastSaleData.id.slice(0,8)}.pdf`;
+         const fileName = `receipt-${lastSaleData.orderId || lastSaleData.id.slice(0,8)}.pdf`;
 
          if (type === 'image') {
             download(imgData, fileName.replace('.pdf', '.png'), 'image/png');
@@ -596,6 +625,13 @@ export default function POSPage() {
                 </button>
               </Link>
             ))}
+            <button 
+              onClick={handleLogout}
+              className="w-full flex items-center px-4 py-3 rounded-xl transition-all text-zinc-400 hover:text-red-400 hover:bg-red-500/10 font-medium"
+            >
+              <LogOut className="h-5 w-5 mr-4 text-zinc-400" />
+              {lang === 'en' ? 'Logout' : 'Ka bax'}
+            </button>
           </nav>
         </div>
         
@@ -656,6 +692,13 @@ export default function POSPage() {
                           </button>
                         </Link>
                       ))}
+                      <button 
+                        onClick={handleLogout}
+                        className="w-full flex items-center px-4 py-4 rounded-xl transition-all text-zinc-400 hover:text-red-400 hover:bg-red-500/10 font-medium"
+                      >
+                        <LogOut className="h-5 w-5 mr-4 text-zinc-400" />
+                        {lang === 'en' ? 'Logout' : 'Ka bax'}
+                      </button>
                     </nav>
                   </div>
                   <div className="p-4 border-t border-zinc-800">
@@ -1210,7 +1253,7 @@ export default function POSPage() {
                   <div className="space-y-0.5 text-[10px] font-mono font-bold leading-tight">
                     <div className="flex justify-between items-center">
                       <span>Date: {lastSaleData.date}</span>
-                      <span>Order ID: #{lastSaleData.id.slice(0, 8).toUpperCase()}</span>
+                      <span>Order ID: #{lastSaleData.orderId || lastSaleData.id.slice(0, 8).toUpperCase()}</span>
                     </div>
                     <div className="text-left">
                       <span>Cashier: {userName || "Cashier"}</span>
@@ -1317,7 +1360,7 @@ export default function POSPage() {
                         ))}
                       </div>
                       <span className="bg-white px-2 py-0.5 text-[10px] font-black z-10 border border-zinc-200 rounded">
-                        {lastSaleData.id.slice(0, 8).toUpperCase()}
+                        {lastSaleData.orderId || lastSaleData.id.slice(0, 8).toUpperCase()}
                       </span>
                     </div>
                   </div>

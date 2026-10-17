@@ -225,23 +225,22 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                 </Link>
               );
             })}
+            <button 
+              onClick={handleLogout}
+              className="w-full flex items-center px-4 py-3 rounded-xl transition-all text-zinc-400 hover:text-red-400 hover:bg-red-500/10 font-medium"
+            >
+              <LogOut className="h-5 w-5 mr-4 text-zinc-400" />
+              {lang === 'en' ? 'Logout' : 'Ka bax'}
+            </button>
           </nav>
         </div>
         
-        <div className="p-6 space-y-3">
+        <div className="p-6">
           <Link href="/pos">
             <Button className="w-full bg-[#8fa4cf]/80 hover:bg-[#8fa4cf] text-[#0b132b] font-semibold py-6 rounded-xl shadow-lg transition-transform active:scale-95">
               {t('new_sale')}
             </Button>
           </Link>
-          <Button 
-            variant="ghost" 
-            onClick={handleLogout}
-            className="w-full text-zinc-500 hover:text-red-400 hover:bg-red-400/10 justify-start py-6 rounded-xl transition-all"
-          >
-            <LogOut className="h-5 w-5 mr-4" />
-            {lang === 'en' ? 'Logout' : 'Ka bax'}
-          </Button>
         </div>
       </aside>
 
@@ -284,6 +283,13 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                         </Link>
                       );
                     })}
+                    <button 
+                      onClick={handleLogout}
+                      className="w-full flex items-center px-4 py-4 rounded-xl transition-all text-zinc-400 hover:text-red-400 hover:bg-red-500/10 font-medium"
+                    >
+                      <LogOut className="h-5 w-5 mr-4 text-zinc-400" />
+                      {lang === 'en' ? 'Logout' : 'Ka bax'}
+                    </button>
                   </nav>
                </SheetContent>
             </Sheet>

@@ -27,7 +27,9 @@ export const viewport = {
   width: "device-width",
   initialScale: 1,
   maximumScale: 1,
+  minimumScale: 1,
   userScalable: false,
+  viewportFit: "cover",
   themeColor: "#0b132b",
 };
 
@@ -37,8 +39,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" suppressHydrationWarning>
-      <body style={{ fontFamily: interFontFamily }} className="min-h-[100dvh] bg-white text-zinc-900 antialiased">
+    <html lang="en" suppressHydrationWarning className="overflow-x-hidden">
+      <body style={{ fontFamily: interFontFamily }} className="min-h-[100dvh] w-full max-w-[100vw] overflow-x-hidden bg-white text-zinc-900 antialiased overscroll-none select-none">
         <LanguageProvider>
           {children}
           <Toaster />
@@ -55,6 +57,22 @@ export default function RootLayout({
                 document.addEventListener('gesturestart', function(e) {
                   e.preventDefault();
                 });
+                document.addEventListener('gesturechange', function(e) {
+                  e.preventDefault();
+                });
+                document.addEventListener('gestureend', function(e) {
+                  e.preventDefault();
+                });
+
+                // Prevent double tap to zoom on mobile
+                var lastTouchEnd = 0;
+                document.addEventListener('touchend', function(event) {
+                  var now = Date.now();
+                  if (now - lastTouchEnd <= 300) {
+                    event.preventDefault();
+                  }
+                  lastTouchEnd = now;
+                }, { passive: false });
               `,
             }}
           />

@@ -10,6 +10,7 @@ import { toPng } from 'html-to-image';
 import download from 'downloadjs';
 import { jsPDF } from 'jspdf';
 import { toast } from "sonner";
+import { mapSalesWithOrderIds } from "@/lib/order-utils";
 
 export default function InvoicesPage() {
   const { t, lang } = useLanguage();
@@ -90,14 +91,16 @@ export default function InvoicesPage() {
         .order('created_at', { ascending: false });
 
       if (salesData && salesData.length > 0) {
-        setSales(salesData);
-        setSelectedSale(salesData[0]); // Select latest by default
+        const mappedSales = mapSalesWithOrderIds(salesData);
+        setSales(mappedSales);
+        setSelectedSale(mappedSales[0]); // Select latest by default
       }
     }
     setIsLoading(false);
   };
 
   const filteredSales = sales.filter(sale => 
+    (sale.formatted_order_id && sale.formatted_order_id.toLowerCase().includes(searchQuery.toLowerCase())) ||
     sale.id.toLowerCase().includes(searchQuery.toLowerCase()) || 
     (sale.customers?.name && sale.customers.name.toLowerCase().includes(searchQuery.toLowerCase())) ||
     sale.payment_method.toLowerCase().includes(searchQuery.toLowerCase())
@@ -133,7 +136,7 @@ export default function InvoicesPage() {
             position: 'relative'
          }
       });
-      download(imgData, `receipt-${selectedSale.id.slice(0,8)}.png`, 'image/png');
+      download(imgData, `receipt-${selectedSale.formatted_order_id || selectedSale.id.slice(0,8)}.png`, 'image/png');
       
       toast.dismiss();
       toast.success(lang === 'en' ? 'Downloaded!' : 'Waa la soo dejiyay!');
@@ -248,7 +251,7 @@ export default function InvoicesPage() {
               className={`p-4 rounded-2xl border cursor-pointer transition-all ${selectedSale?.id === sale.id ? 'bg-[#141b2d] border-[#141b2d] text-white shadow-md' : 'bg-white border-zinc-200 text-zinc-900 hover:border-zinc-300 hover:shadow-sm'}`}
             >
                <div className="flex justify-between items-start mb-2">
-                 <p className="font-bold text-sm">INV-{sale.id.slice(0,6).toUpperCase()}</p>
+                 <p className="font-bold text-sm tracking-wide">{sale.formatted_order_id || ("INV-" + sale.id.slice(0,6).toUpperCase())}</p>
                  <p className="font-extrabold">${sale.total_amount.toFixed(2)}</p>
                </div>
                <div className={`text-xs ${selectedSale?.id === sale.id ? 'text-zinc-300' : 'text-zinc-500'} flex justify-between`}>
@@ -298,7 +301,7 @@ export default function InvoicesPage() {
                      <div className="space-y-0.5 text-[10px] font-mono font-bold leading-tight">
                        <div className="flex justify-between items-center">
                          <span>Date: {new Date(selectedSale.created_at).toLocaleDateString()}, {new Date(selectedSale.created_at).toLocaleTimeString()}</span>
-                         <span>Order ID: #{selectedSale.id.slice(0, 8).toUpperCase()}</span>
+                         <span>Order ID: #{selectedSale.formatted_order_id || selectedSale.id.slice(0, 8).toUpperCase()}</span>
                        </div>
                        <div className="text-left">
                          <span>Cashier: {cashierMap[selectedSale.cashier_id] || "Cashier"}</span>
@@ -389,7 +392,7 @@ export default function InvoicesPage() {
                                     <div key={i} className={`w-[1px] bg-black h-full ${i % 3 === 0 ? 'w-[2px]' : ''}`}></div>
                                  ))}
                               </div>
-                              <span className="bg-white/80 px-2 text-[10px] font-black z-10">{selectedSale.id.slice(0, 8).toUpperCase()}</span>
+                              <span className="bg-white/80 px-2 text-[10px] font-black z-10">{selectedSale.formatted_order_id || selectedSale.id.slice(0, 8).toUpperCase()}</span>
                            </div>
                         </div>
                      </div>
@@ -402,7 +405,7 @@ export default function InvoicesPage() {
                      <div className="flex justify-between items-start border-b-2 border-[#141b2d] pb-8 mb-8">
                      <div>
                         <h1 className="text-4xl font-black uppercase text-[#141b2d] tracking-widest leading-none mb-2">INVOICE</h1>
-                        <p className="text-zinc-500 font-bold uppercase tracking-widest text-sm text-blue-600">#{selectedSale.id.slice(0,8).toUpperCase()}</p>
+                        <p className="text-zinc-500 font-bold uppercase tracking-widest text-sm text-blue-600">#{selectedSale.formatted_order_id || selectedSale.id.slice(0,8).toUpperCase()}</p>
                      </div>
                      <div className="text-right">
                         <h2 className="text-2xl font-black uppercase">{storeName || "DKN STORE"}</h2>
