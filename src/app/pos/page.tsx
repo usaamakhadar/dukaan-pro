@@ -688,7 +688,7 @@ export default function POSPage() {
       <div className="flex-1 bg-[#f9f9fb] flex flex-col overflow-hidden">
         
         {/* Top Header */}
-        <header className="h-20 px-4 md:px-8 flex items-center justify-between bg-[#f9f9fb] shrink-0 border-b border-zinc-200 shadow-sm z-10 w-full mb-2 pb-2">
+        <header className="h-16 md:h-20 px-3 md:px-8 flex items-center justify-between bg-white shrink-0 border-b border-zinc-200 shadow-xs z-10 w-full max-w-[100vw] overflow-hidden">
           <div className="flex items-center flex-1">
              {/* MOBILE MENU TRIGGER */}
              <Sheet>
@@ -733,14 +733,14 @@ export default function POSPage() {
                </SheetContent>
             </Sheet>
 
-            <div className="relative w-full max-w-[200px] sm:max-w-xs md:max-w-md shrink">
-              <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-zinc-400 pointer-events-none" />
+            <div className="relative w-full max-w-[160px] xs:max-w-[200px] sm:max-w-xs md:max-w-md shrink">
+              <Search className="absolute left-3 sm:left-4 top-1/2 -translate-y-1/2 h-4 w-4 sm:h-5 sm:w-5 text-zinc-400 pointer-events-none" />
               <input 
                 type="text" 
                 placeholder={lang === 'en' ? "Search..." : "Raadi..."}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-11 md:pl-12 pr-4 py-2.5 md:py-3 bg-[#eef0f3] border-none rounded-xl text-base focus:outline-none focus:ring-2 focus:ring-[#0b132b]/20 text-[#141b2d] placeholder-zinc-500"
+                className="w-full pl-9 sm:pl-11 md:pl-12 pr-3 sm:pr-4 py-2 sm:py-2.5 md:py-3 bg-[#eef0f3] border-none rounded-xl text-xs sm:text-sm md:text-base focus:outline-none focus:ring-2 focus:ring-[#0b132b]/20 text-[#141b2d] placeholder-zinc-500"
               />
               {/* Hidden input field for hardware barcode scanner */}
               <input 
@@ -820,26 +820,39 @@ export default function POSPage() {
         </header>
 
         {/* Collection & Products */}
-        <main className="flex-1 overflow-y-auto custom-scrollbar p-4 md:p-8 pt-4 pb-20">
-          <div className="mb-8 mt-2 flex justify-between items-start">
+        <main className="flex-1 overflow-y-auto custom-scrollbar p-3 sm:p-6 md:p-8 pt-2 sm:pt-4 pb-24 max-w-[100vw] overflow-x-hidden">
+          {/* Cashier Page Header (Logical, Responsive, Aesthetic) */}
+          <div className="mb-4 sm:mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4">
             <div>
-              <h2 className="text-4xl font-bold text-[#141b2d] mb-2 tracking-tight">{lang === 'en' ? 'Cashier Layout' : 'Meesha Iibka'}</h2>
-              <p className="text-zinc-500 text-lg">{lang === 'en' ? 'Select products below to add to cart.' : 'Riix alaabta si ay u gasho Khasnadda.'}</p>
+              <h2 className="text-xl sm:text-3xl md:text-4xl font-black text-[#141b2d] tracking-tight leading-tight">
+                {lang === 'en' ? 'Cashier Layout' : 'Meesha Iibka'}
+              </h2>
+              <p className="text-xs sm:text-sm text-zinc-500 font-medium mt-0.5">
+                {lang === 'en' ? 'Select products below to add to cart.' : 'Riix alaabta si aad ugu darto khasnadda.'}
+              </p>
             </div>
-            <div className="flex gap-2">
+            
+            {/* Quick Actions (Full-width 2-column grid on mobile, neat inline buttons on tablet/desktop) */}
+            <div className="grid grid-cols-2 sm:flex sm:items-center gap-2 w-full sm:w-auto shrink-0">
                <Button 
                   onClick={() => {
                      window.location.reload();
                   }} 
                   variant="outline" 
-                  className="border-zinc-200 text-[#141b2d] bg-white h-12 rounded-xl shadow-sm hover:bg-zinc-50 font-bold"
+                  className="w-full sm:w-auto border-zinc-200 text-[#141b2d] bg-white h-10 sm:h-11 px-3 sm:px-4 rounded-xl shadow-xs hover:bg-zinc-50 font-bold text-xs sm:text-sm flex items-center justify-center transition-all active:scale-95"
                >
-                  <RefreshCw className="h-4 w-4 mr-2" />
-                  {lang === 'en' ? 'Refresh' : 'Cusboonaysii'}
+                  <RefreshCw className="h-3.5 w-3.5 mr-1.5 text-zinc-500 shrink-0" />
+                  <span>{lang === 'en' ? 'Refresh' : 'Cusboonaysii'}</span>
                </Button>
-               <Button onClick={() => setIsCameraOpen(!isCameraOpen)} variant="outline" className="border-zinc-200 text-[#141b2d] bg-white h-12 rounded-xl shadow-sm hover:bg-zinc-50 font-bold">
-                  <Camera className="h-5 w-5 mr-2" />
-                  {isCameraOpen ? "Close Camera" : "Scan Barkood (Kamarad)"}
+               <Button 
+                  onClick={() => setIsCameraOpen(!isCameraOpen)} 
+                  variant="outline" 
+                  className={`w-full sm:w-auto border-zinc-200 bg-white h-10 sm:h-11 px-3 sm:px-4 rounded-xl shadow-xs font-bold text-xs sm:text-sm flex items-center justify-center transition-all active:scale-95 ${
+                    isCameraOpen ? 'bg-red-50 text-red-600 border-red-200 hover:bg-red-100' : 'text-[#141b2d] hover:bg-zinc-50'
+                  }`}
+               >
+                  <Camera className={`h-4 w-4 mr-1.5 shrink-0 ${isCameraOpen ? 'text-red-500' : 'text-blue-600'}`} />
+                  <span className="truncate">{isCameraOpen ? (lang === 'en' ? 'Close Camera' : 'Xidh Kamarada') : (lang === 'en' ? 'Scan Barcode' : 'Scan Barkood')}</span>
                </Button>
             </div>
           </div>
@@ -868,15 +881,16 @@ export default function POSPage() {
              </div>
           )}
 
-          <div className="flex flex-wrap gap-2 md:gap-3 mb-8">
+          {/* Categories (Smooth horizontal scroll on phone, wrap on desktop) */}
+          <div className="flex items-center gap-1.5 sm:gap-2 overflow-x-auto no-scrollbar pb-1 mb-4 sm:mb-6 -mx-3 px-3 sm:mx-0 sm:px-0 sm:flex-wrap">
             {categories.map(cat => (
               <button 
                 key={cat.id} 
                 onClick={() => setActiveCategory(cat.id)}
-                className={`px-5 md:px-7 py-2 md:py-3 rounded-2xl text-xs sm:text-sm font-extrabold transition-all duration-300 ${
+                className={`px-3.5 sm:px-6 py-2 sm:py-2.5 rounded-xl sm:rounded-2xl text-xs sm:text-sm font-black whitespace-nowrap transition-all duration-200 shrink-0 ${
                   activeCategory === cat.id 
-                    ? "bg-[#141b2d] text-white shadow-xl shadow-[#141b2d]/20 scale-[1.02]" 
-                    : "bg-white text-zinc-500 hover:bg-zinc-100/50 hover:text-[#141b2d] border-2 border-transparent hover:border-zinc-200"
+                    ? "bg-[#141b2d] text-white shadow-md shadow-[#141b2d]/20 scale-[1.02]" 
+                    : "bg-white text-zinc-600 hover:bg-zinc-100 hover:text-[#141b2d] border border-zinc-200/70 shadow-xs"
                 }`}
               >
                 {cat.label}
@@ -885,7 +899,7 @@ export default function POSPage() {
           </div>
 
           {isLoadingProducts ? (
-            <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-4 md:gap-6">
+            <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-2.5 sm:gap-4 md:gap-6">
               {[...Array(8)].map((_, i) => (
                 <div key={i} className="bg-white rounded-3xl p-4 border border-zinc-100 shadow-sm animate-pulse flex flex-col space-y-4">
                   <div className="w-full aspect-[4/5] bg-zinc-200/60 rounded-2xl"></div>
@@ -906,7 +920,7 @@ export default function POSPage() {
                   <div 
                     key={p.id} 
                     onClick={() => !inCart && addToCart(p)}
-                    className={`relative group flex flex-col items-start bg-white rounded-3xl overflow-hidden transition-all duration-300 text-left ring-2 ${inCart ? 'ring-blue-500 shadow-xl shadow-blue-500/10 scale-[1.02]' : 'ring-transparent border border-zinc-100 shadow-sm hover:shadow-2xl hover:shadow-[#141b2d]/5 hover:-translate-y-1 cursor-pointer'}`}
+                    className={`relative group flex flex-col items-start bg-white rounded-2xl sm:rounded-3xl overflow-hidden transition-all duration-300 text-left ring-2 ${inCart ? 'ring-blue-500 shadow-xl shadow-blue-500/10 scale-[1.02]' : 'ring-transparent border border-zinc-100 shadow-sm hover:shadow-2xl hover:shadow-[#141b2d]/5 hover:-translate-y-1 cursor-pointer'}`}
                   >
                     <div className="w-full aspect-[4/5] bg-zinc-50 relative overflow-hidden">
                       <img 
@@ -927,7 +941,7 @@ export default function POSPage() {
                       )}
                     </div>
                     
-                    <div className="p-4 md:p-5 w-full bg-white relative z-10 flex flex-col min-h-[110px]">
+                    <div className="p-3 sm:p-4 md:p-5 w-full bg-white relative z-10 flex flex-col min-h-[90px] sm:min-h-[110px]">
                       <div className="flex justify-between items-start mb-1.5 gap-2">
                          <h3 className="text-sm md:text-base font-extrabold text-[#141b2d] leading-tight line-clamp-2">{p.name}</h3>
                          <span className="text-xs font-extrabold tracking-widest text-zinc-400 uppercase shrink-0">QTY: {p.stock}</span>
