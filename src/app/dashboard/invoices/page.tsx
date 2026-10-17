@@ -107,6 +107,12 @@ export default function InvoicesPage() {
   );
 
   const getStoreLogo = () => {
+    if (typeof window !== "undefined") {
+      const savedStoreLogo = localStorage.getItem("storeLogo");
+      if (savedStoreLogo && savedStoreLogo !== "/images/store-logo.png") return savedStoreLogo;
+      const savedProfilePic = localStorage.getItem("profilePic");
+      if (savedProfilePic && !savedProfilePic.includes("ui-avatars.com")) return savedProfilePic;
+    }
     if (tenantSettings?.receipt_footer) {
       try {
         const parsed = JSON.parse(tenantSettings.receipt_footer);

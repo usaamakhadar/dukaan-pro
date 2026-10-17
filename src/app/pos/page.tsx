@@ -256,6 +256,15 @@ export default function POSPage() {
   };
 
   const getStoreLogo = () => {
+    if (typeof window !== "undefined") {
+      const savedStoreLogo = localStorage.getItem("storeLogo");
+      if (savedStoreLogo && savedStoreLogo !== "/images/store-logo.png") return savedStoreLogo;
+      const savedProfilePic = localStorage.getItem("profilePic");
+      if (savedProfilePic && !savedProfilePic.includes("ui-avatars.com")) return savedProfilePic;
+    }
+    if (profilePic && !profilePic.includes("ui-avatars.com")) {
+      return profilePic;
+    }
     if (tenantSettings?.receipt_footer) {
       try {
         const parsed = JSON.parse(tenantSettings.receipt_footer);
@@ -274,17 +283,43 @@ export default function POSPage() {
        localStorage.setItem("userName", editName);
        localStorage.setItem("userRole", editRole);
        localStorage.setItem("profilePic", editPic);
+       if (editPic && !editPic.includes("ui-avatars.com")) {
+         localStorage.setItem("storeLogo", editPic);
+       }
+    }
+
+    if (tenantId && editPic && !editPic.includes("ui-avatars.com")) {
+      try {
+        const { data: currentSettings } = await supabase
+          .from('tenant_settings')
+          .select('receipt_footer')
+          .eq('tenant_id', tenantId)
+          .single();
+        let footerObj: any = {};
+        if (currentSettings?.receipt_footer) {
+          try { footerObj = JSON.parse(currentSettings.receipt_footer); } catch (e) {}
+        }
+        footerObj.logo = editPic;
+        await supabase
+          .from('tenant_settings')
+          .update({ receipt_footer: JSON.stringify(footerObj) })
+          .eq('tenant_id', tenantId);
+        setTenantSettings((prev: any) => ({
+          ...prev,
+          receipt_footer: JSON.stringify(footerObj)
+        }));
+      } catch (e) {
+        console.error("Failed to sync store logo", e);
+      }
     }
 
     const { error } = await supabase.auth.updateUser({
       data: { 
         full_name: editName,
         role: editRole,
-        // REMOVED avatar_url to fix 494 error
       }
     });
 
-    // Clear huge metadata immediately
     await supabase.auth.updateUser({ data: { avatar_url: null } });
 
     if (error) {
@@ -645,14 +680,7 @@ export default function POSPage() {
           >
             {t('new_sale') || "New Sale"}
           </Button>
-          <Button 
-            variant="ghost" 
-            onClick={handleLogout}
-            className="w-full text-zinc-400 hover:text-red-400 hover:bg-red-500/10 justify-start py-5 px-4 rounded-xl transition-all font-semibold"
-          >
-            <LogOut className="h-5 w-5 mr-3 shrink-0" />
-            <span>{lang === 'en' ? 'Logout' : 'Ka bax'}</span>
-          </Button>
+
         </div>
       </aside>
 
@@ -701,16 +729,7 @@ export default function POSPage() {
                       </button>
                     </nav>
                   </div>
-                  <div className="p-4 border-t border-zinc-800">
-                    <Button 
-                      variant="ghost" 
-                      onClick={handleLogout}
-                      className="w-full text-zinc-400 hover:text-red-400 hover:bg-red-500/10 justify-start py-4 px-4 rounded-xl transition-all font-semibold"
-                    >
-                      <LogOut className="h-5 w-5 mr-3" />
-                      <span>{lang === 'en' ? 'Logout' : 'Ka bax'}</span>
-                    </Button>
-                  </div>
+
                </SheetContent>
             </Sheet>
 
@@ -740,17 +759,7 @@ export default function POSPage() {
              </button>
             <button className="text-zinc-500 hover:text-zinc-800 transition-colors hidden sm:block font-bold"><Bell className="h-5 w-5" /></button>
             
-            {/* Quick One-Click Logout in Header */}
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={handleLogout}
-              className="text-zinc-500 hover:text-red-600 hover:bg-red-50 rounded-xl px-2 md:px-3 py-1.5 h-9 font-bold text-xs transition-colors flex items-center"
-              title={lang === 'en' ? 'Logout' : 'Ka bax'}
-            >
-              <LogOut className="h-4 w-4 md:mr-1.5 text-zinc-500 hover:text-red-600" />
-              <span className="hidden md:inline">{lang === 'en' ? 'Logout' : 'Ka bax'}</span>
-            </Button>
+
 
             {/* PROFILE EDIT (DIALOG) */}
             <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
@@ -803,14 +812,7 @@ export default function POSPage() {
                   </div>
                 </div>
                 <DialogFooter className="flex-col sm:flex-row gap-3">
-                  <Button 
-                    variant="outline" 
-                    onClick={handleLogout} 
-                    className="h-12 border-red-200 text-red-600 hover:bg-red-50 rounded-xl"
-                  >
-                    {lang === 'en' ? 'Logout' : 'Ka bax'}
-                  </Button>
-                  <Button onClick={handleSaveProfile} className="h-12 bg-green-600 hover:bg-green-700 rounded-xl px-8 flex-1">{t('save_changes')}</Button>
+                  <Button onClick={handleSaveProfile} className="h-12 bg-green-600 hover:bg-green-700 rounded-xl px-8 w-full">{t('save_changes')}</Button>
                 </DialogFooter>
               </DialogContent>
             </Dialog>
@@ -1241,9 +1243,33 @@ export default function POSPage() {
                     <p className="text-[11px] text-zinc-600 font-medium leading-tight">
                       {tenantSettings?.receipt_header || (lang === 'en' ? 'Quality Products & Services' : 'Tayada & Adeeg Hufan')}
                     </p>
-                    <p className="text-[10px] text-zinc-500 font-medium pt-0.5">
-                      {lang === 'en' ? 'Thank You & Welcome Back' : 'Soo noqod wanaagsan Macmiil'}
-                    </p>
+                    {/* Contact details: Tel on top, ZAAD/E-Dahab underneath */}
+                    {(() => {
+                      if (!tenantSettings?.receipt_footer) return null;
+                      try {
+                        const parsedFooter = JSON.parse(tenantSettings.receipt_footer);
+                        const hasPhones = parsedFooter.phone1 || parsedFooter.phone2 || parsedFooter.phone3;
+                        const hasPayments = parsedFooter.zaad || parsedFooter.edahab;
+                        if (!hasPhones && !hasPayments) return null;
+                        return (
+                          <div className="text-[9.5px] font-bold font-mono space-y-0.5 pt-1 text-zinc-800">
+                            {hasPhones && (
+                              <p>Tel: {[parsedFooter.phone1, parsedFooter.phone2, parsedFooter.phone3].filter(Boolean).join(" | ")}</p>
+                            )}
+                            {hasPayments && (
+                              <p>
+                                {[
+                                  parsedFooter.zaad ? `ZAAD: ${parsedFooter.zaad}` : null,
+                                  parsedFooter.edahab ? `E-Dahab: ${parsedFooter.edahab}` : null
+                                ].filter(Boolean).join(" // ")}
+                              </p>
+                            )}
+                          </div>
+                        );
+                      } catch (e) {
+                        return null;
+                      }
+                    })()}
                   </div>
 
                   {/* Solid Divider */}
@@ -1315,33 +1341,7 @@ export default function POSPage() {
                     )}
                   </div>
 
-                  {/* Contact Numbers / Payment Details */}
-                  {(() => {
-                    if (!tenantSettings?.receipt_footer) return null;
-                    try {
-                      const parsedFooter = JSON.parse(tenantSettings.receipt_footer);
-                      const hasPhones = parsedFooter.phone1 || parsedFooter.phone2 || parsedFooter.phone3;
-                      const hasPayments = parsedFooter.zaad || parsedFooter.edahab;
-                      if (!hasPhones && !hasPayments) return null;
-                      return (
-                        <div className="text-[9px] font-bold font-mono space-y-0.5 my-2 pt-1 border-t border-dashed border-zinc-200">
-                          {hasPhones && (
-                            <p>Tel: {[parsedFooter.phone1, parsedFooter.phone2, parsedFooter.phone3].filter(Boolean).join(" | ")}</p>
-                          )}
-                          {hasPayments && (
-                            <p>
-                              {[
-                                parsedFooter.zaad ? `ZAAD: ${parsedFooter.zaad}` : null,
-                                parsedFooter.edahab ? `E-Dahab: ${parsedFooter.edahab}` : null
-                              ].filter(Boolean).join(" // ")}
-                            </p>
-                          )}
-                        </div>
-                      );
-                    } catch (e) {
-                      return null;
-                    }
-                  })()}
+
 
                   {/* Notice */}
                   <p className="italic font-bold text-[10.5px] uppercase tracking-wider text-center my-3">

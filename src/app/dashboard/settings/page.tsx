@@ -65,6 +65,9 @@ export default function SettingsPage() {
           ctx?.drawImage(img, 0, 0, width, height);
           const dataUrl = canvas.toDataURL('image/png', 0.85);
           setStoreLogo(dataUrl);
+          if (typeof window !== "undefined") {
+            localStorage.setItem("storeLogo", dataUrl);
+          }
           toast.success(lang === 'en' ? "Store logo updated!" : "Logo-ga waa la diyaariyay!");
         };
       };
@@ -105,7 +108,11 @@ export default function SettingsPage() {
          
          try {
             const footerData = JSON.parse(settingsData.receipt_footer || "{}");
-            setStoreLogo(footerData.logo || "/images/store-logo.png");
+            const loadedLogo = footerData.logo || "/images/store-logo.png";
+            setStoreLogo(loadedLogo);
+            if (typeof window !== "undefined" && footerData.logo) {
+              localStorage.setItem("storeLogo", footerData.logo);
+            }
             setSupportEmail(footerData.email || "");
             setServiceFee(footerData.fee || "0");
             setZaadNumber(footerData.zaad || "");
